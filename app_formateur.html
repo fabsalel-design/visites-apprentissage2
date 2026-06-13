@@ -122,7 +122,7 @@ textarea{resize:vertical;min-height:72px}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V7l9-4 9 4v14"/><path d="M9 21v-6h6v6"/></svg>
     Visites Apprentissage
   </div>
-  <div class="topbar-right" id="topbar-name">Espace Formateur</div>
+  <span id="sync-status" style="font-size:11px;color:rgba(255,255,255,.7)">○ Chargement...</span><div class="topbar-right" id="topbar-name">Espace Formateur</div>
 </div>
 
 <div class="container">
@@ -212,6 +212,67 @@ textarea{resize:vertical;min-height:72px}
 var visits  = JSON.parse(localStorage.getItem('visits')||'[]');
 var drafts  = JSON.parse(localStorage.getItem('drafts')||'{}');
 var geocodeCache = JSON.parse(localStorage.getItem('geocodeCache')||'{}');
+
+
+// ─── SYNC GOOGLE SHEETS ──────────────────────────────────────────────────────
+var SHEET_ID = "1o760oIUSgyz_F0hxYT4zGT--LrLDCh8KriLVFRZGARs";
+var GAS_URL  = localStorage.getItem('gasUrl') || '';  // Apps Script URL
+
+async function gsLoad() {
+  setSyncUI('syncing', 'Chargement...');
+  try {
+    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID
+      + '/gviz/tq?tqx=out:csv&sheet=data&range=A1&t=' + Date.now();
+    var r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var txt = (await r.text()).trim();
+    if (txt.startsWith('"')) txt = txt.slice(1,-1).replace(/""/g,'"');
+    if (!txt || txt === 'null' || txt === '') { setSyncUI('ok','Vide'); return []; }
+    var d = JSON.parse(txt);
+    setSyncUI('ok', 'Sync ' + fmtNow());
+    return Array.isArray(d) ? d : [];
+  } catch(e) { setSyncUI('error','Lecture: '+e.message); return null; }
+}
+
+async function gsSave(data) {
+  localStorage.setItem('visits', JSON.stringify(data)); // cache local toujours
+  if (!GAS_URL) { setSyncUI('error','URL Apps Script manquante'); return false; }
+  setSyncUI('syncing','Sauvegarde...');
+  try {
+    var r = await fetch(GAS_URL, {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'save',data:data})});
+    var j = await r.json();
+    if (j.status !== 'ok') throw new Error(j.message || 'Erreur');
+    setSyncUI('ok','Sauvegardé ' + fmtNow());
+    return true;
+  } catch(e) { setSyncUI('error','Sauvegarde: '+e.message); return false; }
+}
+
+function fmtNow(){ return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+function setSyncUI(s,msg){
+  var el=document.getElementById('sync-status'); if(!el)return;
+  var c={syncing:'#854F0B',ok:'#3B6D11',error:'#A32D2D'};
+  var i={syncing:'⟳',ok:'✓',error:'✗'};
+  el.style.color=c[s]||'#999'; el.textContent=(i[s]||'')+' '+msg;
+}
+
+var _pollTimer=null;
+function startPolling(){
+  if(_pollTimer)return;
+  _pollTimer=setInterval(async function(){
+    var fresh=await gsLoad();
+    if(fresh!==null){
+      var changed=JSON.stringify(fresh)!==JSON.stringify(visits);
+      if(changed){ visits=fresh; localStorage.setItem('visits',JSON.stringify(visits));
+        renderDashboard && renderDashboard();
+        renderVisites && renderVisites();
+        setSyncUI('ok','Mis à jour '+fmtNow());
+      }
+    }
+  },30000);
+}
+
 var currentFormateur = null;
 var openCard = null;
 
@@ -397,7 +458,7 @@ function submitCR(gi){
   visits[gi].tuteur=d.tuteur; visits[gi].observations=d.obs; visits[gi].alertText=d.alertText;
   visits[gi].stars1=d.stars1||0; visits[gi].stars2=d.stars2||0;
   visits[gi].stars3=d.stars3||0; visits[gi].stars4=d.stars4||0;
-  localStorage.setItem('visits',JSON.stringify(visits));
+  gsSave(visits); // sync Google Sheets
   localStorage.setItem('drafts',JSON.stringify(drafts));
   toast('✅ Compte-rendu soumis !');
   renderStats(); renderVisitCards();
@@ -582,9 +643,17 @@ function toast(msg){
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
-initSelect();
-var fms=getFormateurs();
-if(fms.length===1){document.getElementById('sel-view').value=fms[0];loginFormateur();}
+(async function(){
+  var fresh = await gsLoad();
+  if(fresh !== null && fresh.length > 0){
+    visits = fresh;
+    localStorage.setItem('visits', JSON.stringify(visits));
+  }
+  initSelect();
+  var fms=getFormateurs();
+  if(fms.length===1){document.getElementById('sel-view').value=fms[0];loginFormateur();}
+  startPolling();
+})();
 </script>
 </body>
 </html>
