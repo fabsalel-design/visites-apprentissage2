@@ -227,6 +227,11 @@ async function gsLoad() {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     var j = await r.json();
     if (j.status !== 'ok') throw new Error(j.message || 'Erreur');
+    // Si Sheets renvoie un tableau vide ET qu'on a des données locales → suspicion
+    if (Array.isArray(j.data) && j.data.length === 0 && visits.length > 0) {
+      setSyncUI('error', 'Sheets vide — données locales conservées');
+      return null; // ne pas écraser
+    }
     setSyncUI('ok', 'Sync ' + fmtNow());
     return Array.isArray(j.data) ? j.data : [];
   } catch(e) {
@@ -269,7 +274,8 @@ function startPolling() {
   if (_pollTimer) return;
   _pollTimer = setInterval(async function() {
     var fresh = await gsLoad();
-    if (fresh !== null) {
+    // Ne jamais écraser avec un tableau vide (évite d'effacer si Sheets est vide)
+    if (fresh !== null && fresh.length > 0) {
       var changed = JSON.stringify(fresh) !== JSON.stringify(visits);
       if (changed) {
         visits = fresh;
@@ -278,6 +284,10 @@ function startPolling() {
         renderVisites && renderVisites();
         setSyncUI('ok', 'Mis à jour ' + fmtNow());
       }
+    } else if (fresh !== null && fresh.length === 0 && visits.length > 0) {
+      // Sheets vide mais données locales présentes → resauvegarder
+      setSyncUI('syncing', 'Resynchronisation...');
+      gsSave(visits);
     }
   }, 30000);
 }
