@@ -776,64 +776,74 @@ function placeGroupMarker(lat,lng,vlist){
 }
 
 
-// ─── SYNC GOOGLE SHEETS ──────────────────────────────────────────────────────
-var SHEET_ID = "1o760oIUSgyz_F0hxYT4zGT--LrLDCh8KriLVFRZGARs";
-var GAS_URL  = 'https://script.google.com/macros/s/AKfycbzwMqM2XKX-_dCoEYUpgUTpaXeCLVykD_6T9pljOsmT-ZrL0R0kRv8062uaxpt4aw/exec';
 
+// ─── SYNC GOOGLE SHEETS ──────────────────────────────────────────────────────
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbzwMqM2XKX-_dCoEYUpgUTpaXeCLVykD_6T9pljOsmT-ZrL0R0kRv8062uaxpt4aw/exec';
+
+// LECTURE : via GET sur l'Apps Script (évite les problèmes CORS)
 async function gsLoad() {
   setSyncUI('syncing', 'Chargement...');
   try {
-    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID
-      + '/gviz/tq?tqx=out:csv&sheet=data&range=A1&t=' + Date.now();
+    var url = GAS_URL + '?action=load&t=' + Date.now();
     var r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    var txt = (await r.text()).trim();
-    if (txt.startsWith('"')) txt = txt.slice(1,-1).replace(/""/g,'"');
-    if (!txt || txt === 'null' || txt === '') { setSyncUI('ok','Vide'); return []; }
-    var d = JSON.parse(txt);
-    setSyncUI('ok', 'Sync ' + fmtNow());
-    return Array.isArray(d) ? d : [];
-  } catch(e) { setSyncUI('error','Lecture: '+e.message); return null; }
-}
-
-async function gsSave(data) {
-  localStorage.setItem('visits', JSON.stringify(data)); // cache local toujours
-  if (!GAS_URL) { setSyncUI('error','URL Apps Script manquante'); return false; }
-  setSyncUI('syncing','Sauvegarde...');
-  try {
-    var r = await fetch(GAS_URL, {method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'save',data:data})});
     var j = await r.json();
     if (j.status !== 'ok') throw new Error(j.message || 'Erreur');
-    setSyncUI('ok','Sauvegardé ' + fmtNow());
+    setSyncUI('ok', 'Sync ' + fmtNow());
+    return Array.isArray(j.data) ? j.data : [];
+  } catch(e) {
+    setSyncUI('error', 'Lecture: ' + e.message);
+    return null;
+  }
+}
+
+// ÉCRITURE : via POST
+async function gsSave(data) {
+  localStorage.setItem('visits', JSON.stringify(data));
+  setSyncUI('syncing', 'Sauvegarde...');
+  try {
+    var r = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action: 'save', data: data})
+    });
+    var j = await r.json();
+    if (j.status !== 'ok') throw new Error(j.message || 'Erreur');
+    setSyncUI('ok', 'Sauvegardé ' + fmtNow());
     return true;
-  } catch(e) { setSyncUI('error','Sauvegarde: '+e.message); return false; }
+  } catch(e) {
+    setSyncUI('error', 'Sauvegarde: ' + e.message);
+    return false;
+  }
 }
 
-function fmtNow(){ return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
-function setSyncUI(s,msg){
-  var el=document.getElementById('sync-status'); if(!el)return;
-  var c={syncing:'#854F0B',ok:'#3B6D11',error:'#A32D2D'};
-  var i={syncing:'⟳',ok:'✓',error:'✗'};
-  el.style.color=c[s]||'#999'; el.textContent=(i[s]||'')+' '+msg;
+function fmtNow() { return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+function setSyncUI(s, msg) {
+  var el = document.getElementById('sync-status'); if (!el) return;
+  var c = {syncing:'#854F0B', ok:'#3B6D11', error:'#A32D2D'};
+  var i = {syncing:'⟳', ok:'✓', error:'✗'};
+  el.style.color = c[s] || '#999';
+  el.textContent = (i[s]||'') + ' ' + msg;
 }
 
-var _pollTimer=null;
-function startPolling(){
-  if(_pollTimer)return;
-  _pollTimer=setInterval(async function(){
-    var fresh=await gsLoad();
-    if(fresh!==null){
-      var changed=JSON.stringify(fresh)!==JSON.stringify(visits);
-      if(changed){ visits=fresh; localStorage.setItem('visits',JSON.stringify(visits));
+var _pollTimer = null;
+function startPolling() {
+  if (_pollTimer) return;
+  _pollTimer = setInterval(async function() {
+    var fresh = await gsLoad();
+    if (fresh !== null) {
+      var changed = JSON.stringify(fresh) !== JSON.stringify(visits);
+      if (changed) {
+        visits = fresh;
+        localStorage.setItem('visits', JSON.stringify(visits));
         renderDashboard && renderDashboard();
         renderVisites && renderVisites();
-        setSyncUI('ok','Mis à jour '+fmtNow());
+        setSyncUI('ok', 'Mis à jour ' + fmtNow());
       }
     }
-  },30000);
+  }, 30000);
 }
+
 
 // ─── IMPORT EXCEL ─────────────────────────────────────────────────────────────
 function handleDrop(e){e.preventDefault();handleDragLeave();var f=e.dataTransfer.files[0];if(f)parseFile(f);}
@@ -1085,4 +1095,3 @@ document.getElementById('modal-affect').addEventListener('click',function(e){if(
 </script>
 </body>
 </html>
-
