@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visites Apprentissage — Espace Formateur</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#185FA5;--blue-light:#E6F1FB;--blue-dark:#0C447C;
+  --green:#3B6D11;--green-light:#EAF3DE;
+  --amber:#854F0B;--amber-light:#FAEEDA;
+  --red:#A32D2D;--red-light:#FCEBEB;
+  --gray-100:#F4F4F2;--gray-200:#E8E8E4;--gray-400:#9A9A94;
+  --text:#1A1A18;--text2:#5F5E5A;--text3:#9A9A94;
+  --border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.18);
+  --radius:8px;--radius-lg:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:13px;color:var(--text);background:var(--gray-100);min-height:100vh}
+
+/* TOPBAR */
+.topbar{background:var(--blue);padding:0 20px;display:flex;align-items:center;height:52px;gap:12px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:#fff}
+.logo svg{width:20px;height:20px}
+.topbar-right{margin-left:auto;color:rgba(255,255,255,.8);font-size:12px}
+
+/* TABS */
+.tabs{display:flex;gap:2px;margin-bottom:16px;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:4px}
+.tab-btn{flex:1;padding:8px 12px;border:none;background:transparent;border-radius:var(--radius);font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;transition:.15s}
+.tab-btn:hover{background:var(--gray-100)}
+.tab-btn.active{background:var(--blue-light);color:var(--blue)}
+.tab-page{display:none}
+.tab-page.active{display:block}
+
+.container{max-width:860px;margin:0 auto;padding:20px}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px}
+
+/* VISIT CARDS */
+.visit-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:10px;overflow:hidden}
+.visit-card-head{padding:13px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+.visit-card-head:hover{background:#fafafa}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.vc-info{flex:1}
+.vc-name{font-weight:600;font-size:13px}
+.vc-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.b-done{background:var(--green-light);color:var(--green)}
+.b-plan{background:var(--amber-light);color:var(--amber)}
+.b-late{background:var(--red-light);color:var(--red)}
+.b-none{background:var(--gray-200);color:var(--gray-400)}
+.chevron{font-size:11px;color:var(--text3);transition:.2s}
+.chevron.open{transform:rotate(180deg)}
+
+/* FORM */
+.visit-body{display:none;padding:16px;border-top:1px solid var(--border);background:#fafafa}
+.visit-body.open{display:block}
+.form-group{margin-bottom:12px}
+.form-label{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:inherit;color:var(--text);background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
+textarea{resize:vertical;min-height:72px}
+.form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* STARS */
+.criteres-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.critere{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px}
+.critere-label{font-size:11px;color:var(--text2);margin-bottom:5px}
+.stars{display:flex;gap:3px}
+.star{font-size:20px;cursor:pointer;color:var(--gray-200);transition:.1s;user-select:none;line-height:1}
+.star.on{color:#EF9F27}
+
+/* STATS */
+.mini-stats{display:flex;gap:10px;margin-bottom:14px}
+.mini-stat{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;flex:1;text-align:center}
+.ms-val{font-size:20px;font-weight:600}
+.ms-label{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* ALERT */
+.alert{padding:10px 12px;border-radius:var(--radius);font-size:12px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.alert-info{background:var(--blue-light);color:var(--blue-dark);border:1px solid #b5d4f4}
+.alert-success{background:var(--green-light);color:var(--green);border:1px solid #c0dd97}
+.alert-warn{background:var(--amber-light);color:var(--amber);border:1px solid #fac775}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:var(--radius);border:1px solid var(--border2);background:#fff;color:var(--text);cursor:pointer;font-size:12px;font-weight:500;transition:.15s}
+.btn:hover{background:var(--gray-100)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-primary:hover{background:var(--blue-dark)}
+.btn-success{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* MAP */
+#fmap{height:380px;border-radius:var(--radius);border:1px solid var(--border)}
+.map-legend{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:11px;display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.leg-row{display:flex;align-items:center;gap:5px}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.geo-progress{margin-top:8px;display:none}
+.geo-bar-wrap{height:5px;background:var(--gray-200);border-radius:3px;overflow:hidden;margin-top:3px}
+.geo-bar{height:100%;background:var(--blue);border-radius:3px;transition:width .3s;width:0%}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:#1a1a18;color:#fff;padding:10px 16px;border-radius:var(--radius);font-size:13px;z-index:999;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* LOGIN */
+.login-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;max-width:400px;margin:40px auto;text-align:center}
+
+@media(max-width:600px){
+  .form-grid2,.criteres-grid{grid-template-columns:1fr}
+  .mini-stats{flex-wrap:wrap}
+  .container{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V7l9-4 9 4v14"/><path d="M9 21v-6h6v6"/></svg>
+    Visites Apprentissage
+  </div>
+  <div class="topbar-right" id="topbar-name">Espace Formateur</div>
+</div>
+
+<div class="container">
+
+<!-- ÉCRAN SÉLECTION -->
+<div id="screen-select">
+  <div class="login-card">
+    <div style="font-size:32px;margin-bottom:10px">👋</div>
+    <div style="font-size:17px;font-weight:600;margin-bottom:4px">Bienvenue</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:20px">Sélectionnez votre nom pour accéder à vos visites</div>
+    <div id="no-data-alert" class="alert alert-warn" style="text-align:left;display:none">
+      ⚠️ Aucune donnée. Demandez au responsable d'importer les données.
+    </div>
+    <select id="sel-view" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius-lg);font-size:14px;font-weight:500;background:#fff;margin-bottom:14px">
+      <option value="">Choisir un formateur…</option>
+    </select>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="loginFormateur()">Accéder à mes visites →</button>
+  </div>
+</div>
+
+<!-- ÉCRAN PRINCIPAL -->
+<div id="screen-main" style="display:none">
+
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+    <div id="avatar-main" style="width:44px;height:44px;border-radius:50%;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--blue);flex-shrink:0"></div>
+    <div>
+      <div style="font-size:15px;font-weight:600" id="name-main"></div>
+      <div style="font-size:12px;color:var(--text3)" id="sub-main">Formateur</div>
+    </div>
+    <button class="btn" style="margin-left:auto" onclick="logout()">← Changer</button>
+  </div>
+
+  <div class="mini-stats" id="mini-stats"></div>
+  <div class="alert alert-info" id="main-alert" style="display:none"></div>
+
+  <!-- ONGLETS -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-visites" onclick="switchTab('visites')">📋 Mes visites</button>
+    <button class="tab-btn" id="tab-carte" onclick="switchTab('carte')">🗺 Carte</button>
+  </div>
+
+  <!-- ONGLET VISITES -->
+  <div class="tab-page active" id="page-visites">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <select style="padding:6px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;width:auto" id="filter-status" onchange="renderVisitCards()">
+        <option value="">Tous statuts</option>
+        <option>Planifiée</option><option>Effectuée</option><option>En retard</option>
+      </select>
+      <input style="padding:6px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;flex:1;min-width:140px" placeholder="🔍 Rechercher…" id="f-search" oninput="renderVisitCards()">
+    </div>
+    <div id="visits-container"></div>
+  </div>
+
+  <!-- ONGLET CARTE -->
+  <div class="tab-page" id="page-carte">
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <select style="padding:6px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;width:auto" id="mf-statut" onchange="renderFMap()">
+        <option value="">Tous statuts</option>
+        <option>Planifiée</option><option>Effectuée</option><option>En retard</option>
+      </select>
+    </div>
+    <div id="fmap"></div>
+    <div class="geo-progress" id="geo-prog">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2)">
+        <span>🔍 Géocodage… <span id="gp-lbl"></span></span>
+        <span id="gp-pct" style="font-weight:600"></span>
+      </div>
+      <div class="geo-bar-wrap"><div class="geo-bar" id="gp-bar"></div></div>
+      <div id="gp-failed" style="font-size:11px;color:var(--amber);margin-top:3px;display:none"></div>
+    </div>
+    <div class="map-legend">
+      <div class="leg-row"><div class="leg-dot" style="background:#E24B4A"></div>En retard</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#EF9F27"></div>Planifiée</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#639922"></div>Effectuée</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#9A9A94"></div>À affecter</div>
+      <div class="leg-row" style="color:var(--text3);margin-left:auto;font-size:10px">Cliquer sur un marqueur · Chiffre = plusieurs élèves au même lieu</div>
+    </div>
+  </div>
+
+</div><!-- /screen-main -->
+</div><!-- /container -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DONNÉES ──────────────────────────────────────────────────────────────────
+var visits  = JSON.parse(localStorage.getItem('visits')||'[]');
+var drafts  = JSON.parse(localStorage.getItem('drafts')||'{}');
+var geocodeCache = JSON.parse(localStorage.getItem('geocodeCache')||'{}');
+var currentFormateur = null;
+var openCard = null;
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function getFormateurs(){ return [...new Set(visits.map(v=>v.formateur).filter(Boolean))].sort(); }
+function getMyVisits(){ return currentFormateur ? visits.filter(v=>v.formateur===currentFormateur) : []; }
+
+function parseDate(s){
+  if(!s)return null;
+  var m=String(s).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+  var d=new Date(s); return isNaN(d)?null:d;
+}
+function fmtDate(s){ var d=parseDate(s); return d?d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—'; }
+function computeStatut(v){
+  if(v.statut==='Effectuée'||v.statut==='Annulée') return v.statut;
+  if(!v.formateur) return 'À affecter';
+  var d=parseDate(v.datePrevue); if(d&&d<new Date()) return 'En retard';
+  return v.statut||'Planifiée';
+}
+function statusBadge(s){
+  var cls={'Effectuée':'b-done','Planifiée':'b-plan','En retard':'b-late'};
+  return '<span class="badge '+(cls[s]||'b-none')+'">'+s+'</span>';
+}
+function statusColor(s){ return{'Effectuée':'#639922','Planifiée':'#EF9F27','En retard':'#E24B4A','À affecter':'#9A9A94'}[s]||'#9A9A94'; }
+
+// ─── LOGIN / LOGOUT ───────────────────────────────────────────────────────────
+function initSelect(){
+  var ff=getFormateurs();
+  var sel=document.getElementById('sel-view');
+  sel.innerHTML='<option value="">Choisir un formateur…</option>';
+  ff.forEach(f=>{var o=document.createElement('option');o.value=o.textContent=f;sel.appendChild(o);});
+  if(!visits.length) document.getElementById('no-data-alert').style.display='flex';
+}
+function loginFormateur(){
+  var f=document.getElementById('sel-view').value;
+  if(!f){toast('Veuillez sélectionner votre nom');return;}
+  currentFormateur=f;
+  var ini=f.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('avatar-main').textContent=ini;
+  document.getElementById('name-main').textContent=f;
+  document.getElementById('topbar-name').textContent=f;
+  document.getElementById('screen-select').style.display='none';
+  document.getElementById('screen-main').style.display='block';
+  renderStats(); renderVisitCards();
+}
+function logout(){
+  currentFormateur=null;
+  document.getElementById('screen-select').style.display='block';
+  document.getElementById('screen-main').style.display='none';
+  document.getElementById('topbar-name').textContent='Espace Formateur';
+  if(fmap){fmap.remove();fmap=null;fmapInit=false;}
+}
+
+// ─── ONGLETS ──────────────────────────────────────────────────────────────────
+function switchTab(id){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  document.getElementById('page-'+id).classList.add('active');
+  if(id==='carte') setTimeout(initFMap,80);
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function renderStats(){
+  var mv=getMyVisits();
+  var done=mv.filter(v=>computeStatut(v)==='Effectuée').length;
+  var plan=mv.filter(v=>['Planifiée','À affecter'].includes(computeStatut(v))).length;
+  var late=mv.filter(v=>computeStatut(v)==='En retard').length;
+  document.getElementById('mini-stats').innerHTML=
+    ms(mv.length,'Total','#185FA5')+ms(done,'Effectuées','#3B6D11')+ms(plan,'À faire','#854F0B')+ms(late,'En retard','#A32D2D');
+  var al=document.getElementById('main-alert');
+  if(late){ al.style.display='flex'; al.className='alert alert-warn'; al.innerHTML='⚠️ Vous avez <strong>'+late+' visite(s) en retard</strong>. Merci de les traiter en priorité.'; }
+  else if(done===mv.length&&mv.length){ al.style.display='flex'; al.className='alert alert-success'; al.innerHTML='✅ Toutes vos visites sont effectuées. Bravo !'; }
+  else al.style.display='none';
+}
+function ms(val,label,color){ return '<div class="mini-stat"><div class="ms-val" style="color:'+color+'">'+val+'</div><div class="ms-label">'+label+'</div></div>'; }
+
+// ─── VISITE CARDS ─────────────────────────────────────────────────────────────
+function renderVisitCards(){
+  var mv=getMyVisits();
+  var fs=document.getElementById('filter-status').value;
+  var q=(document.getElementById('f-search').value||'').toLowerCase();
+  var filtered=mv.filter(v=>{
+    if(fs&&computeStatut(v)!==fs) return false;
+    if(q&&!(v.nom+' '+v.prenom+' '+v.entreprise).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  filtered.sort((a,b)=>{
+    var ord={'En retard':0,'Planifiée':1,'À affecter':2,'Effectuée':3};
+    return (ord[computeStatut(a)]||5)-(ord[computeStatut(b)]||5);
+  });
+  var html=filtered.map(v=>buildCard(v,visits.indexOf(v),computeStatut(v),drafts[visits.indexOf(v)]||{})).join('');
+  document.getElementById('visits-container').innerHTML=html||'<div style="text-align:center;padding:32px;color:var(--text3)">Aucune visite trouvée</div>';
+  if(openCard!==null){
+    var el=document.getElementById('body-'+openCard);
+    if(el){el.classList.add('open');var ch=document.getElementById('chev-'+openCard);if(ch)ch.classList.add('open');}
+  }
+}
+
+function buildCard(v,gi,s,d){
+  var cr=v.crSoumis==='Oui';
+  return '<div class="visit-card" id="card-'+gi+'">'
+    +'<div class="visit-card-head" onclick="toggleCard('+gi+')">'
+    +'<div class="status-dot" style="background:'+statusColor(s)+'"></div>'
+    +'<div class="vc-info">'
+    +'<div class="vc-name">'+v.prenom+' '+v.nom+'</div>'
+    +'<div class="vc-meta">'+v.entreprise+' · '+(v.ville||'')+(v.datePrevue?' · Prévue le '+fmtDate(v.datePrevue):'')+'</div>'
+    +'</div>'
+    +statusBadge(s)
+    +(cr?'<span class="badge b-done" style="margin-left:4px">CR ✓</span>':'')
+    +'<span class="chevron" id="chev-'+gi+'">▼</span>'
+    +'</div>'
+    +'<div class="visit-body" id="body-'+gi+'">'
+    +(cr?'<div class="alert alert-success">✅ Compte-rendu soumis. Vous pouvez le modifier si besoin.</div>':'')
+    +'<div class="form-grid2">'
+    +'<div class="form-group"><label class="form-label">Date de visite effectuée *</label><input type="date" id="date-'+gi+'" value="'+(d.dateEffectuee||toInputDate(v.dateEffectuee)||'')+'"></div>'
+    +'<div class="form-group"><label class="form-label">Tuteur rencontré</label><input type="text" id="tuteur-'+gi+'" placeholder="Nom et prénom" value="'+(d.tuteur||v.tuteur||'')+'"></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Évaluation de l\'apprenti</label>'
+    +'<div class="criteres-grid">'
+    +buildStars(gi,1,'Intégration dans l\'équipe',d.stars1||0)
+    +buildStars(gi,2,'Maîtrise des tâches',d.stars2||0)
+    +buildStars(gi,3,'Comportement professionnel',d.stars3||0)
+    +buildStars(gi,4,'Ponctualité & assiduité',d.stars4||0)
+    +'</div></div>'
+    +'<div class="form-group"><label class="form-label">Observations générales</label>'
+    +'<textarea id="obs-'+gi+'" placeholder="Points positifs, axes d\'amélioration…">'+(d.obs||v.observations||'')+'</textarea></div>'
+    +'<div class="form-group"><label class="form-label">⚠️ Points d\'attention (difficultés, risque de rupture…)</label>'
+    +'<textarea id="alert-'+gi+'" placeholder="Laisser vide si aucun signalement" style="min-height:50px;border-color:'+(d.alertText?'#f0b0b0':'var(--border2)')+'">'+(d.alertText||'')+'</textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'
+    +'<button class="btn" onclick="saveDraft('+gi+')">💾 Brouillon</button>'
+    +'<button class="btn btn-primary" onclick="submitCR('+gi+')">✅ Soumettre le compte-rendu</button>'
+    +'</div></div></div>';
+}
+
+function buildStars(gi,num,label,val){
+  var s='';
+  for(var i=1;i<=5;i++) s+='<span class="star'+(i<=val?' on':'')+'" onclick="setStar('+gi+','+num+','+i+')" id="s-'+gi+'-'+num+'-'+i+'">★</span>';
+  return '<div class="critere"><div class="critere-label">'+label+'</div><div class="stars" id="stars-'+gi+'-'+num+'">'+s+'</div></div>';
+}
+function setStar(gi,num,val){
+  var d=drafts[gi]||{}; d['stars'+num]=val; drafts[gi]=d;
+  localStorage.setItem('drafts',JSON.stringify(drafts));
+  for(var i=1;i<=5;i++){var el=document.getElementById('s-'+gi+'-'+num+'-'+i);if(el)el.className='star'+(i<=val?' on':'');}
+}
+function toInputDate(s){
+  if(!s)return'';
+  var m=String(s).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  return m?m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'):'';
+}
+function toggleCard(gi){
+  var body=document.getElementById('body-'+gi);
+  var chev=document.getElementById('chev-'+gi);
+  var isOpen=body.classList.contains('open');
+  document.querySelectorAll('.visit-body').forEach(b=>b.classList.remove('open'));
+  document.querySelectorAll('.chevron').forEach(c=>c.classList.remove('open'));
+  if(!isOpen){body.classList.add('open');chev.classList.add('open');openCard=gi;}
+  else openCard=null;
+}
+
+function saveDraft(gi){
+  var d=drafts[gi]||{};
+  d.dateEffectuee=document.getElementById('date-'+gi).value;
+  d.tuteur=document.getElementById('tuteur-'+gi).value;
+  d.obs=document.getElementById('obs-'+gi).value;
+  d.alertText=document.getElementById('alert-'+gi).value;
+  drafts[gi]=d; localStorage.setItem('drafts',JSON.stringify(drafts));
+  toast('Brouillon enregistré');
+}
+function submitCR(gi){
+  var dateEl=document.getElementById('date-'+gi);
+  if(!dateEl.value){toast('Veuillez indiquer la date de visite effectuée');return;}
+  var d=drafts[gi]||{};
+  d.dateEffectuee=dateEl.value;
+  d.tuteur=document.getElementById('tuteur-'+gi).value;
+  d.obs=document.getElementById('obs-'+gi).value;
+  d.alertText=document.getElementById('alert-'+gi).value;
+  drafts[gi]=d;
+  var parts=d.dateEffectuee.split('-');
+  visits[gi].dateEffectuee=parts[2]+'/'+parts[1]+'/'+parts[0];
+  visits[gi].statut='Effectuée'; visits[gi].crSoumis='Oui';
+  visits[gi].tuteur=d.tuteur; visits[gi].observations=d.obs; visits[gi].alertText=d.alertText;
+  visits[gi].stars1=d.stars1||0; visits[gi].stars2=d.stars2||0;
+  visits[gi].stars3=d.stars3||0; visits[gi].stars4=d.stars4||0;
+  localStorage.setItem('visits',JSON.stringify(visits));
+  localStorage.setItem('drafts',JSON.stringify(drafts));
+  toast('✅ Compte-rendu soumis !');
+  renderStats(); renderVisitCards();
+}
+
+// ─── CARTE ────────────────────────────────────────────────────────────────────
+var fmap=null, fmapInit=false, fmarkers=[];
+var geoQueue=[], geoRunning=false, geoTotal=0, geoDone=0, geoFailed=[], geoResults=[], geoExpected=0;
+
+function initFMap(){
+  if(!fmapInit){
+    fmap=L.map('fmap').setView([43.8,4.0],8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:18
+    }).addTo(fmap);
+    fmapInit=true;
+  }
+  renderFMap();
+}
+
+function renderFMap(){
+  if(!fmap) return;
+  fmarkers.forEach(m=>fmap.removeLayer(m)); fmarkers=[];
+  geoResults=[];
+  var fs=document.getElementById('mf-statut').value;
+  var mv=getMyVisits().filter(v=>!fs||computeStatut(v)===fs);
+  geoExpected=mv.length;
+  if(!geoExpected){document.getElementById('geo-prog').style.display='none';return;}
+
+  var toFetch=[];
+  mv.forEach(function(v){
+    var cpVille=(v.codePostal||'').trim()+' '+(v.ville||'').trim();
+    var full=(v.adresse||'').trim()+' '+cpVille;
+    var cached=geocodeCache[full]||geocodeCache[cpVille];
+    if(cached) geoResults.push({v:v,lat:cached.lat,lng:cached.lng});
+    else toFetch.push({v:v,fullKey:full,cpVilleKey:cpVille,queries:buildGeoQueries(v),attempt:0});
+  });
+
+  geoTotal=toFetch.length; geoDone=0; geoFailed=[];
+  updateGeoProgress();
+  if(!toFetch.length){flushFMarkers();return;}
+  geoQueue=toFetch;
+  if(!geoRunning) runGeoQueue();
+}
+
+function buildGeoQueries(v){
+  var cp=(v.codePostal||'').trim(), ville=(v.ville||'').trim(), adr=(v.adresse||'').trim();
+  var clean=adr.replace(/^(ZA|ZAC|ZI|CC|ZONE|CENTRE COMMERCIAL|CTRE COMM|LOT|LIEU[- ]?DIT|LIEUDIT)\s+/i,'').trim();
+  var q=[];
+  if(clean&&cp&&ville) q.push(clean+', '+cp+' '+ville+', France');
+  if(adr&&adr!==clean&&cp&&ville) q.push(adr+', '+cp+' '+ville+', France');
+  if(cp&&ville) q.push(cp+' '+ville+', France');
+  if(ville) q.push(ville+', France');
+  return q.filter(function(x,i,a){return x&&a.indexOf(x)===i;});
+}
+
+function runGeoQueue(){
+  if(!geoQueue.length){geoRunning=false;saveGeoCache();updateGeoProgress();flushFMarkers();return;}
+  geoRunning=true;
+  var item=geoQueue[0];
+  if(!item.queries[item.attempt]){
+    geoQueue.shift(); geoDone++; geoFailed.push((item.v.prenom||'')+' '+(item.v.nom||''));
+    geoExpected--; updateGeoProgress(); checkFFlush();
+    setTimeout(runGeoQueue,50); return;
+  }
+  var q=item.queries[item.attempt];
+  fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=fr&q='+encodeURIComponent(q))
+    .then(function(r){return r.json();})
+    .then(function(data){
+      geoQueue.shift();
+      if(data&&data[0]){
+        var lat=+data[0].lat, lng=+data[0].lon;
+        geocodeCache[item.fullKey]={lat:lat,lng:lng};
+        geocodeCache[item.cpVilleKey]={lat:lat,lng:lng};
+        geoResults.push({v:item.v,lat:lat,lng:lng});
+        geoDone++; updateGeoProgress(); checkFFlush();
+        setTimeout(runGeoQueue,1100);
+      } else {
+        item.attempt++; geoQueue.unshift(item); setTimeout(runGeoQueue,300);
+      }
+    }).catch(function(){setTimeout(runGeoQueue,2000);});
+}
+function saveGeoCache(){try{localStorage.setItem('geocodeCache',JSON.stringify(geocodeCache));}catch(e){}}
+function checkFFlush(){ if(geoResults.length>=geoExpected-geoFailed.length) flushFMarkers(); }
+
+function flushFMarkers(){
+  if(!fmap) return;
+  fmarkers.forEach(m=>fmap.removeLayer(m)); fmarkers=[];
+  // Grouper par entreprise|ville
+  var groups={};
+  geoResults.forEach(function(item){
+    var gkey=((item.v.entreprise||'').trim().toUpperCase()+'|'+(item.v.ville||'').trim().toUpperCase());
+    if(!groups[gkey]) groups[gkey]={visits:[],lats:[],lngs:[]};
+    groups[gkey].visits.push(item.v);
+    groups[gkey].lats.push(item.lat); groups[gkey].lngs.push(item.lng);
+  });
+  Object.values(groups).forEach(function(g){
+    var lat=g.lats.reduce(function(a,b){return a+b;},0)/g.lats.length;
+    var lng=g.lngs.reduce(function(a,b){return a+b;},0)/g.lngs.length;
+    placeFGroupMarker(lat,lng,g.visits);
+  });
+}
+
+function updateGeoProgress(){
+  var el=document.getElementById('geo-prog');
+  if(!geoTotal){if(el)el.style.display='none';return;}
+  if(el)el.style.display='block';
+  var pct=Math.round(geoDone/geoTotal*100);
+  document.getElementById('gp-bar').style.width=pct+'%';
+  document.getElementById('gp-pct').textContent=geoDone+'/'+geoTotal+' ('+pct+'%)';
+  document.getElementById('gp-lbl').textContent=(geoTotal-geoDone>0)?(geoTotal-geoDone)+' restant(s)':'Terminé ✓';
+  var fel=document.getElementById('gp-failed');
+  if(geoFailed.length){fel.style.display='block';fel.textContent='⚠ Non localisés : '+geoFailed.slice(0,4).join(', ')+(geoFailed.length>4?' …':'');}
+  if(geoDone>=geoTotal&&el) setTimeout(function(){el.style.display='none';},3500);
+}
+
+function groupColor(vlist){
+  var ss=vlist.map(function(v){return computeStatut(v);});
+  if(ss.indexOf('En retard')>=0)  return '#E24B4A';
+  if(ss.indexOf('Planifiée')>=0)  return '#EF9F27';
+  if(ss.indexOf('À affecter')>=0) return '#9A9A94';
+  return '#639922';
+}
+
+function placeFGroupMarker(lat,lng,vlist){
+  var n=vlist.length, col=groupColor(vlist);
+  var size=n===1?14:n<=3?20:n<=6?26:32;
+  var fs=n<=9?11:9;
+  var inner=n===1
+    ?('<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+col+';border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>')
+    :('<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+col+';border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:'+fs+'px;font-weight:700;font-family:sans-serif;line-height:1">'+n+'</div>');
+  var icon=L.divIcon({html:inner,iconSize:[size,size],iconAnchor:[size/2,size/2],className:''});
+  var m=L.marker([lat,lng],{icon:icon}).addTo(fmap);
+
+  var ent=vlist[0].entreprise||'';
+  var adr=[(vlist[0].adresse||''),(vlist[0].codePostal||''),(vlist[0].ville||'')].filter(Boolean).join(' ');
+  var tuteur=vlist[0].tuteur||'';
+  var tel=vlist[0].telephone||'';
+
+  var sc={};
+  vlist.forEach(function(v){var s=computeStatut(v);sc[s]=(sc[s]||0)+1;});
+  var statsHtml=Object.keys(sc).map(function(s){
+    return '<span style="font-size:10px;background:'+statusColor(s)+'22;color:'+statusColor(s)+';border-radius:10px;padding:1px 7px;font-weight:700">'+sc[s]+' '+s+'</span>';
+  }).join(' ');
+
+  var rowsHtml=vlist.map(function(v){
+    var s=computeStatut(v);
+    return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #f0f0ee">'
+      +'<span style="width:8px;height:8px;border-radius:50%;background:'+statusColor(s)+';flex-shrink:0;display:inline-block"></span>'
+      +'<span style="font-weight:600;flex:1;font-size:12px">'+(v.prenom||'')+' '+(v.nom||'')+'</span>'
+      +(v.datePrevue?'<span style="font-size:10px;color:#888">'+fmtDate(v.datePrevue)+'</span>':'')
+      +'</div>';
+  }).join('');
+
+  // Bouton "ouvrir le CR" si 1 seul élève
+  var crBtn='';
+  if(n===1){
+    var gi=visits.indexOf(vlist[0]);
+    crBtn='<div style="margin-top:8px"><button onclick="switchTab(\'visites\');setTimeout(function(){toggleCard('+gi+')},100)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer;font-family:inherit">📝 Ouvrir le compte-rendu</button></div>';
+  }
+
+  var popup='<div style="min-width:200px;max-width:270px;font-family:system-ui,sans-serif;font-size:12px">'
+    +'<div style="font-weight:700;font-size:13px;margin-bottom:2px">'+ent+'</div>'
+    +'<div style="color:#777;font-size:11px;margin-bottom:6px">'+adr+'</div>'
+    +(tuteur?'<div style="font-size:11px;margin-bottom:2px">👤 '+tuteur+'</div>':'')
+    +(tel?'<div style="font-size:11px;margin-bottom:6px">📞 '+tel+'</div>':'')
+    +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">'+statsHtml+'</div>'
+    +'<div style="border-top:1px solid #eee;padding-top:6px">'
+    +'<div style="font-size:10px;font-weight:700;color:#aaa;margin-bottom:4px">'+n+' ÉLÈVE'+(n>1?'S':'')+'</div>'
+    +rowsHtml
+    +'</div>'
+    +crBtn
+    +'</div>';
+  m.bindPopup(popup,{maxWidth:290});
+  fmarkers.push(m);
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2800);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+initSelect();
+var fms=getFormateurs();
+if(fms.length===1){document.getElementById('sel-view').value=fms[0];loginFormateur();}
+</script>
+</body>
+</html>
