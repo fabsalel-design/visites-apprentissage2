@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Visites Apprentissage — Interface Responsable</title>
+<title>Visites Apprentissage — Espace Formateur</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -14,104 +13,71 @@
   --green:#3B6D11;--green-light:#EAF3DE;
   --amber:#854F0B;--amber-light:#FAEEDA;
   --red:#A32D2D;--red-light:#FCEBEB;
-  --gray-100:#F4F4F2;--gray-200:#E8E8E4;--gray-400:#9A9A94;--gray-600:#5F5E5A;
+  --gray-100:#F4F4F2;--gray-200:#E8E8E4;--gray-400:#9A9A94;
   --text:#1A1A18;--text2:#5F5E5A;--text3:#9A9A94;
   --border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.18);
   --radius:8px;--radius-lg:12px;
-  --shadow:0 1px 4px rgba(0,0,0,.06);
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:13px;color:var(--text);background:var(--gray-100);min-height:100vh}
 
 /* TOPBAR */
-.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;height:52px;gap:12px;position:sticky;top:0;z-index:200}
-.logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--blue);text-decoration:none;margin-right:8px}
-.logo svg{width:22px;height:22px}
-.nav{display:flex;gap:2px}
-.nav-btn{padding:6px 13px;border-radius:var(--radius);border:none;background:transparent;color:var(--text2);cursor:pointer;font-size:12px;font-weight:500;transition:.15s;white-space:nowrap}
-.nav-btn:hover{background:var(--gray-100)}
-.nav-btn.active{background:var(--blue-light);color:var(--blue)}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-.badge-role{background:var(--green-light);color:var(--green);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
-.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:var(--radius);border:1px solid var(--border2);background:#fff;color:var(--text);cursor:pointer;font-size:12px;font-weight:500;transition:.15s;white-space:nowrap}
-.btn:hover{background:var(--gray-100)}
-.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
-.btn-primary:hover{background:var(--blue-dark);border-color:var(--blue-dark)}
-.btn-danger{background:var(--red-light);color:var(--red);border-color:#f0b0b0}
+.topbar{background:var(--blue);padding:0 20px;display:flex;align-items:center;height:52px;gap:12px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:#fff}
+.logo svg{width:20px;height:20px}
+.topbar-right{margin-left:auto;color:rgba(255,255,255,.8);font-size:12px}
 
-/* LAYOUT */
-.page{display:none;padding:20px;max-width:1200px;margin:0 auto}
-.page.active{display:block}
+/* TABS */
+.tabs{display:flex;gap:2px;margin-bottom:16px;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:4px}
+.tab-btn{flex:1;padding:8px 12px;border:none;background:transparent;border-radius:var(--radius);font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;transition:.15s}
+.tab-btn:hover{background:var(--gray-100)}
+.tab-btn.active{background:var(--blue-light);color:var(--blue)}
+.tab-page{display:none}
+.tab-page.active{display:block}
 
-/* STATS */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-.stat{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px}
-.stat-label{font-size:11px;color:var(--text3);margin-bottom:3px}
-.stat-value{font-size:24px;font-weight:600}
+.container{max-width:860px;margin:0 auto;padding:20px}
 
-/* PANELS */
-.panel{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px}
-.panel-head{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.panel-title{font-size:13px;font-weight:600;flex:1}
-.panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+/* CARDS */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px}
 
-/* TABLE */
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-th{text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;padding:7px 10px;border-bottom:1px solid var(--border2);white-space:nowrap}
-td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:#fafafa}
+/* VISIT CARDS */
+.visit-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:10px;overflow:hidden}
+.visit-card-head{padding:13px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+.visit-card-head:hover{background:#fafafa}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.vc-info{flex:1}
+.vc-name{font-weight:600;font-size:13px}
+.vc-meta{font-size:11px;color:var(--text3);margin-top:2px}
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
 .b-done{background:var(--green-light);color:var(--green)}
 .b-plan{background:var(--amber-light);color:var(--amber)}
 .b-late{background:var(--red-light);color:var(--red)}
-.b-none{background:var(--gray-200);color:var(--gray-600)}
-.b-cancel{background:#f0f0ee;color:#888}
+.b-none{background:var(--gray-200);color:var(--gray-400)}
+.chevron{font-size:11px;color:var(--text3);transition:.2s}
+.chevron.open{transform:rotate(180deg)}
 
-/* FORMATEURS */
-.f-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
-.f-row:last-child{border-bottom:none}
-.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;background:var(--blue-light);color:var(--blue)}
-.f-name{font-weight:600;font-size:13px;min-width:100px}
-.f-meta{font-size:11px;color:var(--text3)}
-.seg-bar{flex:1;height:10px;display:flex;border-radius:5px;overflow:hidden;gap:1px;background:var(--gray-200)}
-.seg{height:100%}
-.pct{font-size:12px;font-weight:600;min-width:36px;text-align:right}
-
-/* MAP */
-#map{height:400px;border-radius:var(--radius);border:1px solid var(--border);z-index:1}
-.map-filters{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-.legend-map{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:11px;display:flex;flex-direction:column;gap:4px}
-.leg-row{display:flex;align-items:center;gap:5px}
-.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-
-/* IMPORT */
-.drop-zone{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:36px;text-align:center;cursor:pointer;transition:.2s;color:var(--text2)}
-.drop-zone:hover,.drop-zone.dragover{border-color:var(--blue);background:var(--blue-light)}
-.drop-zone svg{width:40px;height:40px;margin:0 auto 10px;color:var(--blue);display:block}
-.import-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
-
-/* MODAL */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;align-items:center;justify-content:center}
-.modal-bg.open{display:flex}
-.modal{background:#fff;border-radius:var(--radius-lg);padding:22px;width:480px;max-width:94vw;max-height:90vh;overflow-y:auto}
-.modal-title{font-size:15px;font-weight:600;margin-bottom:16px}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+/* FORM */
+.visit-body{display:none;padding:16px;border-top:1px solid var(--border);background:#fafafa}
+.visit-body.open{display:block}
 .form-group{margin-bottom:12px}
 .form-label{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px}
-input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:inherit;color:var(--text)}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:inherit;color:var(--text);background:#fff}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
-textarea{resize:vertical;min-height:65px}
+textarea{resize:vertical;min-height:72px}
 .form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-/* FILTERS */
-.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-select.filter{padding:6px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;background:#fff;color:var(--text);width:auto}
-.search-input{padding:6px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;width:180px}
+/* STARS */
+.criteres-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.critere{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px}
+.critere-label{font-size:11px;color:var(--text2);margin-bottom:5px}
+.stars{display:flex;gap:3px}
+.star{font-size:20px;cursor:pointer;color:var(--gray-200);transition:.1s;user-select:none;line-height:1}
+.star.on{color:#EF9F27}
 
-/* PROGRESS */
-.progress-full{height:8px;background:var(--gray-200);border-radius:4px;overflow:hidden;margin-top:6px}
-.progress-bar{height:100%;border-radius:4px;transition:width .4s}
+/* STATS */
+.mini-stats{display:flex;gap:10px;margin-bottom:14px}
+.mini-stat{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;flex:1;text-align:center}
+.ms-val{font-size:20px;font-weight:600}
+.ms-label{font-size:11px;color:var(--text3);margin-top:2px}
 
 /* ALERT */
 .alert{padding:10px 12px;border-radius:var(--radius);font-size:12px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
@@ -119,528 +85,452 @@ select.filter{padding:6px 10px;border:1px solid var(--border2);border-radius:var
 .alert-success{background:var(--green-light);color:var(--green);border:1px solid #c0dd97}
 .alert-warn{background:var(--amber-light);color:var(--amber);border:1px solid #fac775}
 
-/* RESPONSIVE */
-@media(max-width:700px){
-  .stats-grid,.panel-grid,.import-grid{grid-template-columns:1fr}
-  .nav-btn span{display:none}
-  .page{padding:12px}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:var(--radius);border:1px solid var(--border2);background:#fff;color:var(--text);cursor:pointer;font-size:12px;font-weight:500;transition:.15s}
+.btn:hover{background:var(--gray-100)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-primary:hover{background:var(--blue-dark)}
+.btn-success{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* MAP */
+#fmap{height:380px;border-radius:var(--radius);border:1px solid var(--border)}
+.map-legend{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:11px;display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.leg-row{display:flex;align-items:center;gap:5px}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.geo-progress{margin-top:8px;display:none}
+.geo-bar-wrap{height:5px;background:var(--gray-200);border-radius:3px;overflow:hidden;margin-top:3px}
+.geo-bar{height:100%;background:var(--blue);border-radius:3px;transition:width .3s;width:0%}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:#1a1a18;color:#fff;padding:10px 16px;border-radius:var(--radius);font-size:13px;z-index:999;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* LOGIN */
+.login-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;max-width:400px;margin:40px auto;text-align:center}
+
+@media(max-width:600px){
+  .form-grid2,.criteres-grid{grid-template-columns:1fr}
+  .mini-stats{flex-wrap:wrap}
+  .container{padding:12px}
 }
-
-/* EMPTY STATE */
-.empty{text-align:center;padding:40px 20px;color:var(--text3)}
-.empty svg{width:48px;height:48px;margin:0 auto 12px;display:block;opacity:.3}
-.empty p{font-size:14px;margin-bottom:8px}
-.empty small{font-size:12px}
-
-/* TOOLTIP */
-.tippy{position:relative}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <a class="logo" href="#">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V7l9-4 9 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 12h6"/></svg>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V7l9-4 9 4v14"/><path d="M9 21v-6h6v6"/></svg>
     Visites Apprentissage
-  </a>
-  <nav class="nav">
-    <button class="nav-btn active" onclick="nav('dashboard')"><span>📊 </span>Tableau de bord</button>
-    <button class="nav-btn" onclick="nav('visites')"><span>📋 </span>Visites</button>
-    <button class="nav-btn" onclick="nav('carte')"><span>🗺 </span>Carte</button>
-    <button class="nav-btn" onclick="nav('import')"><span>📥 </span>Import Excel</button>
-  </nav>
-  <div class="topbar-right">
-    <button class="btn" onclick="openModal('modal-affect')">+ Affecter</button>
-    <span id="sync-status" style="font-size:11px;color:#9A9A94">○ Non configuré</span><span class="badge-role">Responsable</span>
+  </div>
+  <span id="sync-status" style="font-size:11px;color:rgba(255,255,255,.7)">○ Chargement...</span><div class="topbar-right" id="topbar-name">Espace Formateur</div>
+</div>
+
+<div class="container">
+
+<!-- ÉCRAN SÉLECTION -->
+<div id="screen-select">
+  <div class="login-card">
+    <div style="font-size:32px;margin-bottom:10px">👋</div>
+    <div style="font-size:17px;font-weight:600;margin-bottom:4px">Bienvenue</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:20px">Sélectionnez votre nom pour accéder à vos visites</div>
+    <div id="no-data-alert" class="alert alert-warn" style="text-align:left;display:none">
+      ⚠️ Aucune donnée. Demandez au responsable d'importer les données.
+    </div>
+    <select id="sel-view" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius-lg);font-size:14px;font-weight:500;background:#fff;margin-bottom:14px">
+      <option value="">Choisir un formateur…</option>
+    </select>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="loginFormateur()">Accéder à mes visites →</button>
   </div>
 </div>
 
-<!-- DASHBOARD -->
-<div class="page active" id="page-dashboard">
-  <div class="stats-grid" id="stats-grid"></div>
-  <div class="panel-grid">
-    <div class="panel">
-      <div class="panel-head"><span class="panel-title">👥 Charge des formateurs</span></div>
-      <div id="formateurs-list"><div class="empty"><p>Aucune donnée</p><small>Importez un fichier Excel pour commencer</small></div></div>
-    </div>
-    <div class="panel">
-      <div class="panel-head"><span class="panel-title">⚠️ Priorités & retards</span></div>
-      <div id="urgences-list"></div>
-    </div>
-  </div>
-  <div class="panel">
-    <div class="panel-head"><span class="panel-title">📈 Avancement par promotion</span></div>
-    <div id="promos-list"><div class="empty"><small>Aucune donnée importée</small></div></div>
-  </div>
-</div>
+<!-- ÉCRAN PRINCIPAL -->
+<div id="screen-main" style="display:none">
 
-<!-- VISITES -->
-<div class="page" id="page-visites">
-  <div class="panel">
-    <div class="panel-head">
-      <span class="panel-title">Toutes les visites (<span id="visit-count">0</span>)</span>
-      <button class="btn" onclick="exportCsv()">⬇ Export CSV</button>
-      <button class="btn btn-primary" onclick="openModal('modal-affect')">+ Affecter</button>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+    <div id="avatar-main" style="width:44px;height:44px;border-radius:50%;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--blue);flex-shrink:0"></div>
+    <div>
+      <div style="font-size:15px;font-weight:600" id="name-main"></div>
+      <div style="font-size:12px;color:var(--text3)" id="sub-main">Formateur</div>
     </div>
-    <div class="filters">
-      <input class="search-input" id="search" placeholder="🔍 Rechercher…" oninput="renderVisites()">
-      <select class="filter" id="f-formateur" onchange="renderVisites()"><option value="">Tous formateurs</option></select>
-      <select class="filter" id="f-statut" onchange="renderVisites()">
+    <button class="btn" style="margin-left:auto" onclick="logout()">← Changer</button>
+  </div>
+
+  <div class="mini-stats" id="mini-stats"></div>
+  <div class="alert alert-info" id="main-alert" style="display:none"></div>
+
+  <!-- ONGLETS -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-visites" onclick="switchTab('visites')">📋 Mes visites</button>
+    <button class="tab-btn" id="tab-carte" onclick="switchTab('carte')">🗺 Carte</button>
+  </div>
+
+  <!-- ONGLET VISITES -->
+  <div class="tab-page active" id="page-visites">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <select style="padding:6px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;width:auto" id="filter-status" onchange="renderVisitCards()">
         <option value="">Tous statuts</option>
-        <option>Planifiée</option><option>Effectuée</option><option>En retard</option><option>À affecter</option>
+        <option>Planifiée</option><option>Effectuée</option><option>En retard</option>
       </select>
-      <select class="filter" id="f-promo" onchange="renderVisites()"><option value="">Toutes promotions</option></select>
+      <input style="padding:6px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;flex:1;min-width:140px" placeholder="🔍 Rechercher…" id="f-search" oninput="renderVisitCards()">
     </div>
-    <div class="tbl-wrap"><table>
-      <thead><tr>
-        <th>Élève</th><th>Type</th><th>Entreprise</th><th>Ville</th>
-        <th>Tuteur</th><th>Formateur</th><th>Date prévue</th><th>Statut</th><th>CR</th><th></th>
-      </tr></thead>
-      <tbody id="visites-tbody"></tbody>
-    </table></div>
+    <div id="visits-container"></div>
   </div>
-</div>
 
-<!-- CARTE -->
-<div class="page" id="page-carte">
-  <div class="panel">
-    <div class="panel-head"><span class="panel-title">🗺 Carte des entreprises à visiter</span></div>
-    <div class="map-filters">
-      <select class="filter" id="mf-formateur" onchange="filterMap()"><option value="">Tous formateurs</option></select>
-      <select class="filter" id="mf-statut" onchange="filterMap()">
+  <!-- ONGLET CARTE -->
+  <div class="tab-page" id="page-carte">
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <select style="padding:6px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;width:auto" id="mf-statut" onchange="renderFMap()">
         <option value="">Tous statuts</option>
-        <option>Planifiée</option><option>Effectuée</option><option>En retard</option><option>À affecter</option>
+        <option>Planifiée</option><option>Effectuée</option><option>En retard</option>
       </select>
     </div>
-    <div id="map"></div>
-    <div id="geocode-progress" style="display:none;margin-top:10px">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px">
-        <span>🔍 Géocodage en cours… <span id="gp-text"></span></span>
+    <div id="fmap"></div>
+    <div class="geo-progress" id="geo-prog">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2)">
+        <span>🔍 Géocodage… <span id="gp-lbl"></span></span>
         <span id="gp-pct" style="font-weight:600"></span>
       </div>
-      <div style="height:6px;background:var(--gray-200);border-radius:3px;overflow:hidden">
-        <div id="gp-bar" style="height:100%;background:var(--blue);border-radius:3px;transition:width .3s;width:0%"></div>
-      </div>
-      <div id="gp-failed" style="font-size:11px;color:var(--amber);margin-top:4px;display:none"></div>
+      <div class="geo-bar-wrap"><div class="geo-bar" id="gp-bar"></div></div>
+      <div id="gp-failed" style="font-size:11px;color:var(--amber);margin-top:3px;display:none"></div>
     </div>
-    <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;align-items:flex-start">
-      <div class="legend-map">
-        <div class="leg-row"><div class="leg-dot" style="background:#E24B4A"></div>En retard</div>
-        <div class="leg-row"><div class="leg-dot" style="background:#EF9F27"></div>Planifiée</div>
-        <div class="leg-row"><div class="leg-dot" style="background:#639922"></div>Effectuée</div>
-        <div class="leg-row"><div class="leg-dot" style="background:#9A9A94"></div>À affecter</div>
-      </div>
-      <div style="font-size:11px;color:var(--text3)">
-        Géocodage via OpenStreetMap · Résultats mis en cache (pas re-téléchargés au rechargement)<br>
-        Cliquez sur un marqueur pour les détails &nbsp;·&nbsp;
-        <button class="btn" style="padding:2px 8px;font-size:11px;display:inline-flex" onclick="clearGeocodeCache()">🔄 Réinitialiser le cache</button>
-      </div>
+    <div class="map-legend">
+      <div class="leg-row"><div class="leg-dot" style="background:#E24B4A"></div>En retard</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#EF9F27"></div>Planifiée</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#639922"></div>Effectuée</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#9A9A94"></div>À affecter</div>
+      <div class="leg-row" style="color:var(--text3);margin-left:auto;font-size:10px">Cliquer sur un marqueur · Chiffre = plusieurs élèves au même lieu</div>
     </div>
   </div>
-</div>
 
-<!-- IMPORT -->
-<div class="page" id="page-import">
-  <div class="import-grid">
-    <div class="panel">
-      <div class="panel-head"><span class="panel-title">📥 Importer un fichier Excel</span></div>
-      <div id="import-alert"></div>
-      <div id="gas-config-box" style="margin-bottom:14px;padding:12px;border-radius:8px;border:1px solid #b5d4f4;background:#E6F1FB">
-        <div style="font-size:12px;font-weight:600;color:#185FA5;margin-bottom:6px">🔗 Synchronisation Google Sheets</div>
-        <div style="font-size:11px;color:#444;margin-bottom:8px">Collez ici l'URL de votre Apps Script pour activer la sync en temps réel avec les formateurs.</div>
-        <div style="display:flex;gap:6px">
-          <input id="gas-url-input" type="text" placeholder="https://script.google.com/macros/s/..." style="flex:1;font-size:12px;padding:6px 10px">
-          <button class="btn btn-primary" style="white-space:nowrap" onclick="saveGasUrl()">Enregistrer</button>
-        </div>
-        <div id="gas-status" style="font-size:11px;margin-top:6px;color:#666"></div>
-      </div>
-      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
-           ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M12 16V4m0 0L8 8m4-4l4 4"/><rect x="2" y="14" width="20" height="8" rx="2"/>
-        </svg>
-        <p style="font-weight:600;margin-bottom:4px">Glisser-déposer votre fichier Excel ici</p>
-        <small>ou cliquer pour parcourir · .xlsx .xls .csv acceptés</small>
-      </div>
-      <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileInput(event)">
-      <div style="margin-top:14px;font-size:12px;color:var(--text2)">
-        <strong>Colonnes lues automatiquement :</strong> Nom, Prénom, Promotion, Entreprise, Adresse, Code postal, Ville, Formateur affecté, Date prévue, Date effectuée, Statut, Observations
-      </div>
-      <div style="margin-top:12px;display:flex;gap:8px">
-        <button class="btn" onclick="loadDemo()">▶ Charger données démo</button>
-        <button class="btn btn-danger" onclick="clearData()">🗑 Effacer données</button>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="panel-head"><span class="panel-title">📊 État de l'import</span></div>
-      <div id="import-status">
-        <div class="empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
-          <p>Aucun fichier importé</p>
-          <small>Les données persisteront dans le navigateur</small>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="panel">
-    <div class="panel-head"><span class="panel-title">📋 Format attendu</span></div>
-    <div class="alert alert-success">✅ Votre fichier <strong>iSolution</strong> est reconnu directement — aucune modification nécessaire.</div>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>Colonne de votre fichier</th><th>→ Champ dans l'outil</th><th>Exemple</th></tr></thead>
-      <tbody>
-        <tr><td><strong>FORMATEURS</strong></td><td>Formateur assigné</td><td>FABRICE</td></tr>
-        <tr><td><strong>Elève Nom</strong></td><td>Nom de l'élève</td><td>ALARCO</td></tr>
-        <tr><td><strong>Elève Prénom</strong></td><td>Prénom de l'élève</td><td>Mateo</td></tr>
-        <tr><td><strong>Mds organisme</strong></td><td>Nom de l'entreprise</td><td>SAS RAPIERE BRICOMARCHE</td></tr>
-        <tr><td><strong>Mds adresse 1</strong></td><td>Adresse</td><td>85 Allée Roch Pape</td></tr>
-        <tr><td><strong>Mds code postal</strong></td><td>Code postal</td><td>84300</td></tr>
-        <tr><td><strong>Mds ville</strong></td><td>Ville (géocodée pour la carte)</td><td>CAVAILLON</td></tr>
-        <tr><td>Mds nom + Mds prenom</td><td>Maître de stage (tuteur)</td><td>Daniel FLORES</td></tr>
-        <tr><td>Téléphone 1 / Portable 1</td><td>Téléphone entreprise</td><td>04 90 78 23 25</td></tr>
-        <tr><td>Contrat date début / fin</td><td>Durée du contrat</td><td>01/08/2025</td></tr>
-        <tr><td>Contrat type contrat</td><td>Type (Stage / CApp…)</td><td>CApp</td></tr>
-        <tr style="color:var(--text3)"><td colspan="3">Les colonnes <em>Date visite prévue</em>, <em>Statut</em>, <em>Observations</em> peuvent être ajoutées manuellement dans l'outil.</td></tr>
-      </tbody>
-    </table></div>
-  </div>
-</div>
+</div><!-- /screen-main -->
+</div><!-- /container -->
 
-<!-- MODAL AFFECTER -->
-<div class="modal-bg" id="modal-affect">
-  <div class="modal">
-    <div class="modal-title">📅 Affecter / modifier une visite</div>
-    <div class="form-group">
-      <label class="form-label">Apprenti</label>
-      <select id="ma-apprenti" onchange="fillAffect()"><option value="">Sélectionner…</option></select>
-    </div>
-    <div class="form-grid2">
-      <div class="form-group">
-        <label class="form-label">Formateur</label>
-        <select id="ma-formateur"><option value="">Sélectionner…</option></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Date prévue</label>
-        <input type="date" id="ma-date">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Statut</label>
-      <select id="ma-statut">
-        <option>Planifiée</option><option>Effectuée</option><option>En retard</option><option>À affecter</option><option>Annulée</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Observations</label>
-      <textarea id="ma-obs" placeholder="Remarques, instructions…"></textarea>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal('modal-affect')">Annuler</button>
-      <button class="btn btn-primary" onclick="saveAffect()">Enregistrer</button>
-    </div>
-  </div>
-</div>
+<div class="toast" id="toast"></div>
 
 <script>
-// ─── STATE ────────────────────────────────────────────────────────────────────
-var visits = JSON.parse(localStorage.getItem('visits')||'[]');
+// ─── DONNÉES ──────────────────────────────────────────────────────────────────
+var visits  = JSON.parse(localStorage.getItem('visits')||'[]');
+var drafts  = JSON.parse(localStorage.getItem('drafts')||'{}');
+var geocodeCache = JSON.parse(localStorage.getItem('geocodeCache')||'{}');
 
 
-// ─── NAVIGATION ───────────────────────────────────────────────────────────────
-function nav(page){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  event.currentTarget.classList.add('active');
-  if(page==='carte'){setTimeout(initMap,100);}
-  if(page==='dashboard')renderDashboard();
-  if(page==='visites')renderVisites();
+
+// ─── SYNC GOOGLE SHEETS ──────────────────────────────────────────────────────
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbzwMqM2XKX-_dCoEYUpgUTpaXeCLVykD_6T9pljOsmT-ZrL0R0kRv8062uaxpt4aw/exec';
+
+// LECTURE : via GET sur l'Apps Script (évite les problèmes CORS)
+async function gsLoad() {
+  setSyncUI('syncing', 'Chargement...');
+  try {
+    var url = GAS_URL + '?action=load&t=' + Date.now();
+    var r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var j = await r.json();
+    if (j.status !== 'ok') throw new Error(j.message || 'Erreur');
+    setSyncUI('ok', 'Sync ' + fmtNow());
+    return Array.isArray(j.data) ? j.data : [];
+  } catch(e) {
+    setSyncUI('error', 'Lecture: ' + e.message);
+    return null;
+  }
 }
 
-// ─── STATUS HELPERS ───────────────────────────────────────────────────────────
-function statusBadge(s){
-  var cls={'Effectuée':'b-done','Planifiée':'b-plan','En retard':'b-late','À affecter':'b-none','Annulée':'b-cancel'};
-  return '<span class="badge '+(cls[s]||'b-none')+'">'+s+'</span>';
+// ÉCRITURE : via POST
+async function gsSave(data) {
+  localStorage.setItem('visits', JSON.stringify(data));
+  setSyncUI('syncing', 'Sauvegarde...');
+  try {
+    var r = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action: 'save', data: data})
+    });
+    var j = await r.json();
+    if (j.status !== 'ok') throw new Error(j.message || 'Erreur');
+    setSyncUI('ok', 'Sauvegardé ' + fmtNow());
+    return true;
+  } catch(e) {
+    setSyncUI('error', 'Sauvegarde: ' + e.message);
+    return false;
+  }
 }
-function statusColor(s){
-  return {'Effectuée':'#639922','Planifiée':'#EF9F27','En retard':'#E24B4A','À affecter':'#9A9A94','Annulée':'#c0c0c0'}[s]||'#9A9A94';
+
+function fmtNow() { return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+function setSyncUI(s, msg) {
+  var el = document.getElementById('sync-status'); if (!el) return;
+  var c = {syncing:'#854F0B', ok:'#3B6D11', error:'#A32D2D'};
+  var i = {syncing:'⟳', ok:'✓', error:'✗'};
+  el.style.color = c[s] || '#999';
+  el.textContent = (i[s]||'') + ' ' + msg;
 }
+
+var _pollTimer = null;
+function startPolling() {
+  if (_pollTimer) return;
+  _pollTimer = setInterval(async function() {
+    var fresh = await gsLoad();
+    if (fresh !== null) {
+      var changed = JSON.stringify(fresh) !== JSON.stringify(visits);
+      if (changed) {
+        visits = fresh;
+        localStorage.setItem('visits', JSON.stringify(visits));
+        renderDashboard && renderDashboard();
+        renderVisites && renderVisites();
+        setSyncUI('ok', 'Mis à jour ' + fmtNow());
+      }
+    }
+  }, 30000);
+}
+
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function getFormateurs(){ return [...new Set(visits.map(v=>v.formateur).filter(Boolean))].sort(); }
+function getMyVisits(){ return currentFormateur ? visits.filter(v=>v.formateur===currentFormateur) : []; }
+
 function parseDate(s){
   if(!s)return null;
-  if(s instanceof Date)return s;
   var m=String(s).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
   if(m)return new Date(+m[3],+m[2]-1,+m[1]);
   var d=new Date(s); return isNaN(d)?null:d;
 }
-function fmtDate(s){
-  var d=parseDate(s); if(!d)return '—';
-  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
-}
-function isLate(v){
-  if(v.statut==='Effectuée'||v.statut==='Annulée')return false;
-  var d=parseDate(v.datePrevue); if(!d)return false;
-  return d<new Date();
-}
+function fmtDate(s){ var d=parseDate(s); return d?d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—'; }
 function computeStatut(v){
-  if(v.statut==='Effectuée'||v.statut==='Annulée')return v.statut;
-  if(!v.formateur||v.formateur==='')return 'À affecter';
-  if(isLate(v))return 'En retard';
-  if(v.statut)return v.statut;
-  return 'Planifiée';
+  if(v.statut==='Effectuée'||v.statut==='Annulée') return v.statut;
+  if(!v.formateur) return 'À affecter';
+  var d=parseDate(v.datePrevue); if(d&&d<new Date()) return 'En retard';
+  return v.statut||'Planifiée';
+}
+function statusBadge(s){
+  var cls={'Effectuée':'b-done','Planifiée':'b-plan','En retard':'b-late'};
+  return '<span class="badge '+(cls[s]||'b-none')+'">'+s+'</span>';
+}
+function statusColor(s){ return{'Effectuée':'#639922','Planifiée':'#EF9F27','En retard':'#E24B4A','À affecter':'#9A9A94'}[s]||'#9A9A94'; }
+
+// ─── LOGIN / LOGOUT ───────────────────────────────────────────────────────────
+function initSelect(){
+  var ff=getFormateurs();
+  var sel=document.getElementById('sel-view');
+  sel.innerHTML='<option value="">Choisir un formateur…</option>';
+  ff.forEach(f=>{var o=document.createElement('option');o.value=o.textContent=f;sel.appendChild(o);});
+  if(!visits.length) document.getElementById('no-data-alert').style.display='flex';
+}
+function loginFormateur(){
+  var f=document.getElementById('sel-view').value;
+  if(!f){toast('Veuillez sélectionner votre nom');return;}
+  currentFormateur=f;
+  var ini=f.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('avatar-main').textContent=ini;
+  document.getElementById('name-main').textContent=f;
+  document.getElementById('topbar-name').textContent=f;
+  document.getElementById('screen-select').style.display='none';
+  document.getElementById('screen-main').style.display='block';
+  renderStats(); renderVisitCards();
+}
+function logout(){
+  currentFormateur=null;
+  document.getElementById('screen-select').style.display='block';
+  document.getElementById('screen-main').style.display='none';
+  document.getElementById('topbar-name').textContent='Espace Formateur';
+  if(fmap){fmap.remove();fmap=null;fmapInit=false;}
 }
 
-// ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function renderDashboard(){
-  var total=visits.length;
-  var done=visits.filter(v=>computeStatut(v)==='Effectuée').length;
-  var plan=visits.filter(v=>computeStatut(v)==='Planifiée').length;
-  var late=visits.filter(v=>computeStatut(v)==='En retard').length;
-  document.getElementById('stats-grid').innerHTML=
-    stat('Total visites',total,'#185FA5')+stat('Effectuées',done,'#3B6D11')+
-    stat('Planifiées',plan,'#854F0B')+stat('En retard',late,'#A32D2D');
-
-  // Formateurs
-  var byF={};
-  visits.forEach(v=>{
-    var f=v.formateur||'Non affecté';
-    if(!byF[f])byF[f]={done:0,plan:0,late:0,total:0};
-    var s=computeStatut(v);
-    byF[f].total++;
-    if(s==='Effectuée')byF[f].done++;
-    else if(s==='En retard')byF[f].late++;
-    else byF[f].plan++;
-  });
-  var html='';
-  if(!visits.length){html='<div class="empty"><p>Aucune donnée</p><small>Importez un fichier Excel</small></div>';}
-  Object.keys(byF).sort().forEach(f=>{
-    var d=byF[f]; var pct=d.total?Math.round(d.done/d.total*100):0;
-    var ini=f.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    html+=`<div class="f-row">
-      <div class="avatar">${ini}</div>
-      <div style="min-width:100px"><div class="f-name">${f}</div><div class="f-meta">${d.done}/${d.total} effectuées</div></div>
-      <div class="seg-bar" style="flex:1">
-        <div class="seg" style="width:${d.total?d.done/d.total*100:0}%;background:#639922"></div>
-        <div class="seg" style="width:${d.total?d.plan/d.total*100:0}%;background:#EF9F27"></div>
-        <div class="seg" style="width:${d.total?d.late/d.total*100:0}%;background:#E24B4A"></div>
-      </div>
-      <div class="pct" style="color:${pct>=70?'#3B6D11':pct>=40?'#854F0B':'#A32D2D'}">${pct}%</div>
-    </div>`;
-  });
-  document.getElementById('formateurs-list').innerHTML=html;
-
-  // Urgences
-  var urgent=visits.filter(v=>computeStatut(v)==='En retard').slice(0,6);
-  var uhtml=urgent.length?urgent.map(v=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0ee">
-      <div style="width:8px;height:8px;border-radius:50%;background:#E24B4A;flex-shrink:0"></div>
-      <div style="flex:1">
-        <div style="font-weight:600">${v.prenom} ${v.nom}</div>
-        <div style="font-size:11px;color:var(--text3)">${v.entreprise} · ${v.ville}</div>
-      </div>
-      <div style="font-size:11px;color:#A32D2D">${v.formateur||'Non affecté'}</div>
-    </div>`).join('')
-    :'<div class="empty"><p style="color:#3B6D11">✓ Aucun retard</p></div>';
-  document.getElementById('urgences-list').innerHTML=uhtml;
-
-  // Promos
-  var byP={};
-  visits.forEach(v=>{
-    var p=v.promotion||'Sans promotion';
-    if(!byP[p])byP[p]={done:0,total:0};
-    byP[p].total++;
-    if(computeStatut(v)==='Effectuée')byP[p].done++;
-  });
-  var phtml=Object.keys(byP).length?Object.keys(byP).sort().map(p=>{
-    var d=byP[p]; var pct=d.total?Math.round(d.done/d.total*100):0;
-    return `<div style="margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-        <span style="font-weight:600">${p}</span>
-        <span style="color:var(--text3)">${d.done}/${d.total} — ${pct}%</span>
-      </div>
-      <div class="progress-full"><div class="progress-bar" style="width:${pct}%;background:${pct>=70?'#639922':pct>=40?'#EF9F27':'#E24B4A'}"></div></div>
-    </div>`;
-  }).join(''):'<div class="empty"><small>Aucune donnée importée</small></div>';
-  document.getElementById('promos-list').innerHTML=phtml;
-}
-function stat(label,val,color){
-  return `<div class="stat"><div class="stat-label">${label}</div><div class="stat-value" style="color:${color}">${val}</div></div>`;
+// ─── ONGLETS ──────────────────────────────────────────────────────────────────
+function switchTab(id){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  document.getElementById('page-'+id).classList.add('active');
+  if(id==='carte') setTimeout(initFMap,80);
 }
 
-// ─── VISITES ──────────────────────────────────────────────────────────────────
-function renderVisites(){
-  var q=(document.getElementById('search').value||'').toLowerCase();
-  var ff=document.getElementById('f-formateur').value;
-  var fs=document.getElementById('f-statut').value;
-  var fp=document.getElementById('f-promo').value;
-  var filtered=visits.filter(v=>{
-    var s=computeStatut(v);
-    if(ff&&v.formateur!==ff)return false;
-    if(fs&&s!==fs)return false;
-    if(fp&&v.promotion!==fp)return false;
-    if(q&&!(v.nom+' '+v.prenom+' '+v.entreprise+' '+v.ville).toLowerCase().includes(q))return false;
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function renderStats(){
+  var mv=getMyVisits();
+  var done=mv.filter(v=>computeStatut(v)==='Effectuée').length;
+  var plan=mv.filter(v=>['Planifiée','À affecter'].includes(computeStatut(v))).length;
+  var late=mv.filter(v=>computeStatut(v)==='En retard').length;
+  document.getElementById('mini-stats').innerHTML=
+    ms(mv.length,'Total','#185FA5')+ms(done,'Effectuées','#3B6D11')+ms(plan,'À faire','#854F0B')+ms(late,'En retard','#A32D2D');
+  var al=document.getElementById('main-alert');
+  if(late){ al.style.display='flex'; al.className='alert alert-warn'; al.innerHTML='⚠️ Vous avez <strong>'+late+' visite(s) en retard</strong>. Merci de les traiter en priorité.'; }
+  else if(done===mv.length&&mv.length){ al.style.display='flex'; al.className='alert alert-success'; al.innerHTML='✅ Toutes vos visites sont effectuées. Bravo !'; }
+  else al.style.display='none';
+}
+function ms(val,label,color){ return '<div class="mini-stat"><div class="ms-val" style="color:'+color+'">'+val+'</div><div class="ms-label">'+label+'</div></div>'; }
+
+// ─── VISITE CARDS ─────────────────────────────────────────────────────────────
+function renderVisitCards(){
+  var mv=getMyVisits();
+  var fs=document.getElementById('filter-status').value;
+  var q=(document.getElementById('f-search').value||'').toLowerCase();
+  var filtered=mv.filter(v=>{
+    if(fs&&computeStatut(v)!==fs) return false;
+    if(q&&!(v.nom+' '+v.prenom+' '+v.entreprise).toLowerCase().includes(q)) return false;
     return true;
   });
-  document.getElementById('visit-count').textContent=filtered.length;
-  var html=filtered.map((v,i)=>`<tr>
-    <td><strong>${v.nom} ${v.prenom}</strong></td>
-    <td style="color:var(--text3);font-size:11px">${v.typeContrat||v.promotion||'—'}</td>
-    <td>${v.entreprise||'—'}</td>
-    <td style="font-size:11px">${v.ville||'—'}</td>
-    <td style="font-size:11px;color:var(--text2)">${v.tuteur||'—'}</td>
-    <td>${v.formateur||'<span style="color:var(--text3)">Non affecté</span>'}</td>
-    <td>${fmtDate(v.datePrevue)}</td>
-    <td>${statusBadge(computeStatut(v))}</td>
-    <td>${v.crSoumis==='Oui'?'<span style="color:#3B6D11;font-size:11px">✓</span>':'<span style="color:var(--text3);font-size:11px">—</span>'}</td>
-    <td><button class="btn" style="padding:4px 8px;font-size:11px" onclick="editVisit(${visits.indexOf(v)})">✏</button></td>
-  </tr>`).join('');
-  document.getElementById('visites-tbody').innerHTML=html||'<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:24px">Aucune visite trouvée</td></tr>';
-  populateFilters();
-}
-function populateFilters(){
-  var formateurs=[...new Set(visits.map(v=>v.formateur).filter(Boolean))].sort();
-  var promos=[...new Set(visits.map(v=>v.promotion).filter(Boolean))].sort();
-  ['f-formateur','mf-formateur','ma-formateur'].forEach(id=>{
-    var el=document.getElementById(id); if(!el)return;
-    var cur=el.value;
-    el.innerHTML='<option value="">'+( id==='ma-formateur'?'Sélectionner…':'Tous formateurs')+'</option>';
-    formateurs.forEach(f=>{var o=document.createElement('option');o.value=o.textContent=f;el.appendChild(o);});
-    el.value=cur;
+  filtered.sort((a,b)=>{
+    var ord={'En retard':0,'Planifiée':1,'À affecter':2,'Effectuée':3};
+    return (ord[computeStatut(a)]||5)-(ord[computeStatut(b)]||5);
   });
-  ['f-promo'].forEach(id=>{
-    var el=document.getElementById(id); if(!el)return;
-    var cur=el.value;
-    el.innerHTML='<option value="">Toutes promotions</option>';
-    promos.forEach(p=>{var o=document.createElement('option');o.value=o.textContent=p;el.appendChild(o);});
-    el.value=cur;
-  });
-  var ma=document.getElementById('ma-apprenti');
-  if(ma){
-    var cur=ma.value;
-    ma.innerHTML='<option value="">Sélectionner…</option>';
-    visits.forEach((v,i)=>{var o=document.createElement('option');o.value=i;o.textContent=v.nom+' '+v.prenom+' — '+v.entreprise;ma.appendChild(o);});
-    ma.value=cur;
+  var html=filtered.map(v=>buildCard(v,visits.indexOf(v),computeStatut(v),drafts[visits.indexOf(v)]||{})).join('');
+  document.getElementById('visits-container').innerHTML=html||'<div style="text-align:center;padding:32px;color:var(--text3)">Aucune visite trouvée</div>';
+  if(openCard!==null){
+    var el=document.getElementById('body-'+openCard);
+    if(el){el.classList.add('open');var ch=document.getElementById('chev-'+openCard);if(ch)ch.classList.add('open');}
   }
 }
 
-// ─── MAP ──────────────────────────────────────────────────────────────────────
-var map=null, markers=[];
-var geocodeCache = JSON.parse(localStorage.getItem('geocodeCache')||'{}');
-
-function saveGeocodeCache(){
-  try{localStorage.setItem('geocodeCache',JSON.stringify(geocodeCache));}catch(e){}
+function buildCard(v,gi,s,d){
+  var cr=v.crSoumis==='Oui';
+  return '<div class="visit-card" id="card-'+gi+'">'
+    +'<div class="visit-card-head" onclick="toggleCard('+gi+')">'
+    +'<div class="status-dot" style="background:'+statusColor(s)+'"></div>'
+    +'<div class="vc-info">'
+    +'<div class="vc-name">'+v.prenom+' '+v.nom+'</div>'
+    +'<div class="vc-meta">'+v.entreprise+' · '+(v.ville||'')+(v.datePrevue?' · Prévue le '+fmtDate(v.datePrevue):'')+'</div>'
+    +'</div>'
+    +statusBadge(s)
+    +(cr?'<span class="badge b-done" style="margin-left:4px">CR ✓</span>':'')
+    +'<span class="chevron" id="chev-'+gi+'">▼</span>'
+    +'</div>'
+    +'<div class="visit-body" id="body-'+gi+'">'
+    +(cr?'<div class="alert alert-success">✅ Compte-rendu soumis. Vous pouvez le modifier si besoin.</div>':'')
+    +'<div class="form-grid2">'
+    +'<div class="form-group"><label class="form-label">Date de visite effectuée *</label><input type="date" id="date-'+gi+'" value="'+(d.dateEffectuee||toInputDate(v.dateEffectuee)||'')+'"></div>'
+    +'<div class="form-group"><label class="form-label">Tuteur rencontré</label><input type="text" id="tuteur-'+gi+'" placeholder="Nom et prénom" value="'+(d.tuteur||v.tuteur||'')+'"></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Évaluation de l\'apprenti</label>'
+    +'<div class="criteres-grid">'
+    +buildStars(gi,1,'Intégration dans l\'équipe',d.stars1||0)
+    +buildStars(gi,2,'Maîtrise des tâches',d.stars2||0)
+    +buildStars(gi,3,'Comportement professionnel',d.stars3||0)
+    +buildStars(gi,4,'Ponctualité & assiduité',d.stars4||0)
+    +'</div></div>'
+    +'<div class="form-group"><label class="form-label">Observations générales</label>'
+    +'<textarea id="obs-'+gi+'" placeholder="Points positifs, axes d\'amélioration…">'+(d.obs||v.observations||'')+'</textarea></div>'
+    +'<div class="form-group"><label class="form-label">⚠️ Points d\'attention (difficultés, risque de rupture…)</label>'
+    +'<textarea id="alert-'+gi+'" placeholder="Laisser vide si aucun signalement" style="min-height:50px;border-color:'+(d.alertText?'#f0b0b0':'var(--border2)')+'">'+(d.alertText||'')+'</textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'
+    +'<button class="btn" onclick="saveDraft('+gi+')">💾 Brouillon</button>'
+    +'<button class="btn btn-primary" onclick="submitCR('+gi+')">✅ Soumettre le compte-rendu</button>'
+    +'</div></div></div>';
 }
-function clearGeocodeCache(){
-  geocodeCache={};
-  localStorage.removeItem('geocodeCache');
-  if(map){markers.forEach(m=>map.removeLayer(m));markers=[];}
-  renderMapMarkers();
+
+function buildStars(gi,num,label,val){
+  var s='';
+  for(var i=1;i<=5;i++) s+='<span class="star'+(i<=val?' on':'')+'" onclick="setStar('+gi+','+num+','+i+')" id="s-'+gi+'-'+num+'-'+i+'">★</span>';
+  return '<div class="critere"><div class="critere-label">'+label+'</div><div class="stars" id="stars-'+gi+'-'+num+'">'+s+'</div></div>';
+}
+function setStar(gi,num,val){
+  var d=drafts[gi]||{}; d['stars'+num]=val; drafts[gi]=d;
+  localStorage.setItem('drafts',JSON.stringify(drafts));
+  for(var i=1;i<=5;i++){var el=document.getElementById('s-'+gi+'-'+num+'-'+i);if(el)el.className='star'+(i<=val?' on':'');}
+}
+function toInputDate(s){
+  if(!s)return'';
+  var m=String(s).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  return m?m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'):'';
+}
+function toggleCard(gi){
+  var body=document.getElementById('body-'+gi);
+  var chev=document.getElementById('chev-'+gi);
+  var isOpen=body.classList.contains('open');
+  document.querySelectorAll('.visit-body').forEach(b=>b.classList.remove('open'));
+  document.querySelectorAll('.chevron').forEach(c=>c.classList.remove('open'));
+  if(!isOpen){body.classList.add('open');chev.classList.add('open');openCard=gi;}
+  else openCard=null;
 }
 
-function initMap(){
-  if(map){renderMapMarkers();return;}
-  map=L.map('map').setView([43.8,4.0],8);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:18
-  }).addTo(map);
-  renderMapMarkers();
+function saveDraft(gi){
+  var d=drafts[gi]||{};
+  d.dateEffectuee=document.getElementById('date-'+gi).value;
+  d.tuteur=document.getElementById('tuteur-'+gi).value;
+  d.obs=document.getElementById('obs-'+gi).value;
+  d.alertText=document.getElementById('alert-'+gi).value;
+  drafts[gi]=d; localStorage.setItem('drafts',JSON.stringify(drafts));
+  toast('Brouillon enregistré');
+}
+function submitCR(gi){
+  var dateEl=document.getElementById('date-'+gi);
+  if(!dateEl.value){toast('Veuillez indiquer la date de visite effectuée');return;}
+  var d=drafts[gi]||{};
+  d.dateEffectuee=dateEl.value;
+  d.tuteur=document.getElementById('tuteur-'+gi).value;
+  d.obs=document.getElementById('obs-'+gi).value;
+  d.alertText=document.getElementById('alert-'+gi).value;
+  drafts[gi]=d;
+  var parts=d.dateEffectuee.split('-');
+  visits[gi].dateEffectuee=parts[2]+'/'+parts[1]+'/'+parts[0];
+  visits[gi].statut='Effectuée'; visits[gi].crSoumis='Oui';
+  visits[gi].tuteur=d.tuteur; visits[gi].observations=d.obs; visits[gi].alertText=d.alertText;
+  visits[gi].stars1=d.stars1||0; visits[gi].stars2=d.stars2||0;
+  visits[gi].stars3=d.stars3||0; visits[gi].stars4=d.stars4||0;
+  gsSave(visits); // sync Google Sheets
+  localStorage.setItem('drafts',JSON.stringify(drafts));
+  toast('✅ Compte-rendu soumis !');
+  renderStats(); renderVisitCards();
 }
 
-function filterMap(){renderMapMarkers();}
+// ─── CARTE ────────────────────────────────────────────────────────────────────
+var fmap=null, fmapInit=false, fmarkers=[];
+var geoQueue=[], geoRunning=false, geoTotal=0, geoDone=0, geoFailed=[], geoResults=[], geoExpected=0;
 
-// ─── GÉOCODAGE + GROUPEMENT ───────────────────────────────────────────────────
-// Principe : on collecte d'abord TOUTES les visites avec leurs coords (cache ou
-// requête Nominatim), puis on groupe par (entreprise|ville) et on pose les marqueurs.
+function initFMap(){
+  if(!fmapInit){
+    fmap=L.map('fmap').setView([43.8,4.0],8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:18
+    }).addTo(fmap);
+    fmapInit=true;
+  }
+  renderFMap();
+}
 
-var geoQueue=[];       // [{v, fullKey, cpVilleKey, queries, attempt}]
-var geoRunning=false;
-var geoTotal=0, geoDone=0, geoFailed=[];
-// Résultats en attente (rempli au fil du géocodage, vidé au flush final)
-var geoResults=[];     // [{v, lat, lng}]
-var geoExpected=0;     // nombre total de visites à traiter
-
-function renderMapMarkers(){
-  if(!map) return;
-  markers.forEach(m=>map.removeLayer(m)); markers=[];
+function renderFMap(){
+  if(!fmap) return;
+  fmarkers.forEach(m=>fmap.removeLayer(m)); fmarkers=[];
   geoResults=[];
-
-  var ff=document.getElementById('mf-formateur').value;
   var fs=document.getElementById('mf-statut').value;
-  var filtered=visits.filter(v=>{
-    if(ff && v.formateur!==ff) return false;
-    if(fs && computeStatut(v)!==fs) return false;
-    return true;
-  });
+  var mv=getMyVisits().filter(v=>!fs||computeStatut(v)===fs);
+  geoExpected=mv.length;
+  if(!geoExpected){document.getElementById('geo-prog').style.display='none';return;}
 
-  geoExpected = filtered.length;
-  if(!geoExpected){
-    document.getElementById('geocode-progress').style.display='none';
-    return;
-  }
-
-  // Séparer items en cache vs à télécharger
   var toFetch=[];
-  filtered.forEach(function(v){
+  mv.forEach(function(v){
     var cpVille=(v.codePostal||'').trim()+' '+(v.ville||'').trim();
     var full=(v.adresse||'').trim()+' '+cpVille;
     var cached=geocodeCache[full]||geocodeCache[cpVille];
-    if(cached){
-      geoResults.push({v:v,lat:cached.lat,lng:cached.lng});
-    } else {
-      toFetch.push({v:v,fullKey:full,cpVilleKey:cpVille,queries:buildGeoQueries(v),attempt:0});
-    }
+    if(cached) geoResults.push({v:v,lat:cached.lat,lng:cached.lng});
+    else toFetch.push({v:v,fullKey:full,cpVilleKey:cpVille,queries:buildGeoQueries(v),attempt:0});
   });
 
   geoTotal=toFetch.length; geoDone=0; geoFailed=[];
   updateGeoProgress();
-
-  if(!toFetch.length){
-    // Tout en cache → flush immédiat
-    flushMarkers();
-    return;
-  }
-
-  // Lancer la queue
+  if(!toFetch.length){flushFMarkers();return;}
   geoQueue=toFetch;
   if(!geoRunning) runGeoQueue();
 }
 
 function buildGeoQueries(v){
-  var cp=(v.codePostal||'').trim();
-  var ville=(v.ville||'').trim();
-  var adr=(v.adresse||'').trim();
+  var cp=(v.codePostal||'').trim(), ville=(v.ville||'').trim(), adr=(v.adresse||'').trim();
   var clean=adr.replace(/^(ZA|ZAC|ZI|CC|ZONE|CENTRE COMMERCIAL|CTRE COMM|LOT|LIEU[- ]?DIT|LIEUDIT)\s+/i,'').trim();
   var q=[];
   if(clean&&cp&&ville) q.push(clean+', '+cp+' '+ville+', France');
   if(adr&&adr!==clean&&cp&&ville) q.push(adr+', '+cp+' '+ville+', France');
   if(cp&&ville) q.push(cp+' '+ville+', France');
   if(ville) q.push(ville+', France');
-  // déduplique
   return q.filter(function(x,i,a){return x&&a.indexOf(x)===i;});
 }
 
 function runGeoQueue(){
-  if(!geoQueue.length){
-    geoRunning=false;
-    saveGeocodeCache();
-    updateGeoProgress();
-    flushMarkers();
-    return;
-  }
+  if(!geoQueue.length){geoRunning=false;saveGeoCache();updateGeoProgress();flushFMarkers();return;}
   geoRunning=true;
   var item=geoQueue[0];
-
-  // Plus aucun fallback → échec définitif
   if(!item.queries[item.attempt]){
-    geoQueue.shift();
-    geoDone++;
-    geoFailed.push((item.v.prenom||'')+' '+(item.v.nom||''));
-    geoExpected--; // cette visite n'aura pas de marqueur
-    updateGeoProgress();
-    // Si toutes les visites sont traitées, flush
-    if(geoResults.length + geoFailed.length >= geoExpected + geoFailed.length) checkFlush();
-    setTimeout(runGeoQueue,50);
-    return;
+    geoQueue.shift(); geoDone++; geoFailed.push((item.v.prenom||'')+' '+(item.v.nom||''));
+    geoExpected--; updateGeoProgress(); checkFFlush();
+    setTimeout(runGeoQueue,50); return;
   }
-
   var q=item.queries[item.attempt];
   fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=fr&q='+encodeURIComponent(q))
     .then(function(r){return r.json();})
@@ -651,73 +541,47 @@ function runGeoQueue(){
         geocodeCache[item.fullKey]={lat:lat,lng:lng};
         geocodeCache[item.cpVilleKey]={lat:lat,lng:lng};
         geoResults.push({v:item.v,lat:lat,lng:lng});
-        geoDone++;
-        updateGeoProgress();
-        checkFlush();
+        geoDone++; updateGeoProgress(); checkFFlush();
         setTimeout(runGeoQueue,1100);
       } else {
-        // Essai suivant sans délai Nominatim
-        item.attempt++;
-        geoQueue.unshift(item);
-        setTimeout(runGeoQueue,300);
+        item.attempt++; geoQueue.unshift(item); setTimeout(runGeoQueue,300);
       }
-    })
-    .catch(function(){
-      setTimeout(runGeoQueue,2000);
-    });
+    }).catch(function(){setTimeout(runGeoQueue,2000);});
 }
+function saveGeoCache(){try{localStorage.setItem('geocodeCache',JSON.stringify(geocodeCache));}catch(e){}}
+function checkFFlush(){ if(geoResults.length>=geoExpected-geoFailed.length) flushFMarkers(); }
 
-function checkFlush(){
-  // Flush dès que tous les résultats attendus sont là
-  if(geoResults.length >= geoExpected - geoFailed.length) flushMarkers();
-}
-
-function flushMarkers(){
-  if(!map) return;
-  // Effacer les anciens marqueurs
-  markers.forEach(m=>map.removeLayer(m)); markers=[];
-
-  // Grouper par (entreprise normalisée | ville normalisée)
+function flushFMarkers(){
+  if(!fmap) return;
+  fmarkers.forEach(m=>fmap.removeLayer(m)); fmarkers=[];
+  // Grouper par entreprise|ville
   var groups={};
   geoResults.forEach(function(item){
-    var gkey=((item.v.entreprise||'').trim().toUpperCase()
-      +'|'+(item.v.ville||'').trim().toUpperCase());
-    if(!groups[gkey]){
-      groups[gkey]={visits:[],lats:[],lngs:[]};
-    }
+    var gkey=((item.v.entreprise||'').trim().toUpperCase()+'|'+(item.v.ville||'').trim().toUpperCase());
+    if(!groups[gkey]) groups[gkey]={visits:[],lats:[],lngs:[]};
     groups[gkey].visits.push(item.v);
-    groups[gkey].lats.push(item.lat);
-    groups[gkey].lngs.push(item.lng);
+    groups[gkey].lats.push(item.lat); groups[gkey].lngs.push(item.lng);
   });
-
   Object.values(groups).forEach(function(g){
-    // Centroïde du groupe
     var lat=g.lats.reduce(function(a,b){return a+b;},0)/g.lats.length;
     var lng=g.lngs.reduce(function(a,b){return a+b;},0)/g.lngs.length;
-    placeGroupMarker(lat, lng, g.visits);
+    placeFGroupMarker(lat,lng,g.visits);
   });
 }
 
 function updateGeoProgress(){
-  var el=document.getElementById('geocode-progress');
+  var el=document.getElementById('geo-prog');
   if(!geoTotal){if(el)el.style.display='none';return;}
-  if(el) el.style.display='block';
+  if(el)el.style.display='block';
   var pct=Math.round(geoDone/geoTotal*100);
-  var bar=document.getElementById('gp-bar');
-  if(bar) bar.style.width=pct+'%';
-  var ptxt=document.getElementById('gp-pct');
-  if(ptxt) ptxt.textContent=geoDone+'/'+geoTotal+' ('+pct+'%)';
-  var lbl=document.getElementById('gp-text');
-  if(lbl) lbl.textContent=(geoTotal-geoDone>0)?(geoTotal-geoDone)+' restant(s)':'Terminé ✓';
+  document.getElementById('gp-bar').style.width=pct+'%';
+  document.getElementById('gp-pct').textContent=geoDone+'/'+geoTotal+' ('+pct+'%)';
+  document.getElementById('gp-lbl').textContent=(geoTotal-geoDone>0)?(geoTotal-geoDone)+' restant(s)':'Terminé ✓';
   var fel=document.getElementById('gp-failed');
-  if(fel&&geoFailed.length){
-    fel.style.display='block';
-    fel.textContent='⚠ Non localisés ('+geoFailed.length+') : '+geoFailed.slice(0,5).join(', ')+(geoFailed.length>5?' …':'');
-  }
-  if(geoDone>=geoTotal&&el) setTimeout(function(){el.style.display='none';},4000);
+  if(geoFailed.length){fel.style.display='block';fel.textContent='⚠ Non localisés : '+geoFailed.slice(0,4).join(', ')+(geoFailed.length>4?' …':'');}
+  if(geoDone>=geoTotal&&el) setTimeout(function(){el.style.display='none';},3500);
 }
 
-// ─── MARQUEURS GROUPÉS ────────────────────────────────────────────────────────
 function groupColor(vlist){
   var ss=vlist.map(function(v){return computeStatut(v);});
   if(ss.indexOf('En retard')>=0)  return '#E24B4A';
@@ -726,20 +590,16 @@ function groupColor(vlist){
   return '#639922';
 }
 
-function placeGroupMarker(lat,lng,vlist){
-  var n=vlist.length;
-  var col=groupColor(vlist);
+function placeFGroupMarker(lat,lng,vlist){
+  var n=vlist.length, col=groupColor(vlist);
   var size=n===1?14:n<=3?20:n<=6?26:32;
   var fs=n<=9?11:9;
-
   var inner=n===1
     ?('<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+col+';border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>')
     :('<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+col+';border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:'+fs+'px;font-weight:700;font-family:sans-serif;line-height:1">'+n+'</div>');
-
   var icon=L.divIcon({html:inner,iconSize:[size,size],iconAnchor:[size/2,size/2],className:''});
-  var m=L.marker([lat,lng],{icon:icon}).addTo(map);
+  var m=L.marker([lat,lng],{icon:icon}).addTo(fmap);
 
-  // Popup
   var ent=vlist[0].entreprise||'';
   var adr=[(vlist[0].adresse||''),(vlist[0].codePostal||''),(vlist[0].ville||'')].filter(Boolean).join(' ');
   var tuteur=vlist[0].tuteur||'';
@@ -756,11 +616,18 @@ function placeGroupMarker(lat,lng,vlist){
     return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #f0f0ee">'
       +'<span style="width:8px;height:8px;border-radius:50%;background:'+statusColor(s)+';flex-shrink:0;display:inline-block"></span>'
       +'<span style="font-weight:600;flex:1;font-size:12px">'+(v.prenom||'')+' '+(v.nom||'')+'</span>'
-      +'<span style="font-size:10px;color:#888">'+(v.formateur||'—')+'</span>'
+      +(v.datePrevue?'<span style="font-size:10px;color:#888">'+fmtDate(v.datePrevue)+'</span>':'')
       +'</div>';
   }).join('');
 
-  var popup='<div style="min-width:220px;max-width:280px;font-family:system-ui,sans-serif;font-size:12px">'
+  // Bouton "ouvrir le CR" si 1 seul élève
+  var crBtn='';
+  if(n===1){
+    var gi=visits.indexOf(vlist[0]);
+    crBtn='<div style="margin-top:8px"><button onclick="switchTab(\'visites\');setTimeout(function(){toggleCard('+gi+')},100)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer;font-family:inherit">📝 Ouvrir le compte-rendu</button></div>';
+  }
+
+  var popup='<div style="min-width:200px;max-width:270px;font-family:system-ui,sans-serif;font-size:12px">'
     +'<div style="font-weight:700;font-size:13px;margin-bottom:2px">'+ent+'</div>'
     +'<div style="color:#777;font-size:11px;margin-bottom:6px">'+adr+'</div>'
     +(tuteur?'<div style="font-size:11px;margin-bottom:2px">👤 '+tuteur+'</div>':'')
@@ -769,320 +636,31 @@ function placeGroupMarker(lat,lng,vlist){
     +'<div style="border-top:1px solid #eee;padding-top:6px">'
     +'<div style="font-size:10px;font-weight:700;color:#aaa;margin-bottom:4px">'+n+' ÉLÈVE'+(n>1?'S':'')+'</div>'
     +rowsHtml
-    +'</div></div>';
-
-  m.bindPopup(popup,{maxWidth:300});
-  markers.push(m);
+    +'</div>'
+    +crBtn
+    +'</div>';
+  m.bindPopup(popup,{maxWidth:290});
+  fmarkers.push(m);
 }
 
-
-// ─── SYNC GOOGLE SHEETS ──────────────────────────────────────────────────────
-var SHEET_ID = "1o760oIUSgyz_F0hxYT4zGT--LrLDCh8KriLVFRZGARs";
-var GAS_URL  = 'https://script.google.com/macros/s/AKfycbzwMqM2XKX-_dCoEYUpgUTpaXeCLVykD_6T9pljOsmT-ZrL0R0kRv8062uaxpt4aw/exec';
-
-async function gsLoad() {
-  setSyncUI('syncing', 'Chargement...');
-  try {
-    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID
-      + '/gviz/tq?tqx=out:csv&sheet=data&range=A1&t=' + Date.now();
-    var r = await fetch(url);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    var txt = (await r.text()).trim();
-    if (txt.startsWith('"')) txt = txt.slice(1,-1).replace(/""/g,'"');
-    if (!txt || txt === 'null' || txt === '') { setSyncUI('ok','Vide'); return []; }
-    var d = JSON.parse(txt);
-    setSyncUI('ok', 'Sync ' + fmtNow());
-    return Array.isArray(d) ? d : [];
-  } catch(e) { setSyncUI('error','Lecture: '+e.message); return null; }
-}
-
-async function gsSave(data) {
-  localStorage.setItem('visits', JSON.stringify(data)); // cache local toujours
-  if (!GAS_URL) { setSyncUI('error','URL Apps Script manquante'); return false; }
-  setSyncUI('syncing','Sauvegarde...');
-  try {
-    var r = await fetch(GAS_URL, {method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'save',data:data})});
-    var j = await r.json();
-    if (j.status !== 'ok') throw new Error(j.message || 'Erreur');
-    setSyncUI('ok','Sauvegardé ' + fmtNow());
-    return true;
-  } catch(e) { setSyncUI('error','Sauvegarde: '+e.message); return false; }
-}
-
-function fmtNow(){ return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
-function setSyncUI(s,msg){
-  var el=document.getElementById('sync-status'); if(!el)return;
-  var c={syncing:'#854F0B',ok:'#3B6D11',error:'#A32D2D'};
-  var i={syncing:'⟳',ok:'✓',error:'✗'};
-  el.style.color=c[s]||'#999'; el.textContent=(i[s]||'')+' '+msg;
-}
-
-var _pollTimer=null;
-function startPolling(){
-  if(_pollTimer)return;
-  _pollTimer=setInterval(async function(){
-    var fresh=await gsLoad();
-    if(fresh!==null){
-      var changed=JSON.stringify(fresh)!==JSON.stringify(visits);
-      if(changed){ visits=fresh; localStorage.setItem('visits',JSON.stringify(visits));
-        renderDashboard && renderDashboard();
-        renderVisites && renderVisites();
-        setSyncUI('ok','Mis à jour '+fmtNow());
-      }
-    }
-  },30000);
-}
-
-// ─── IMPORT EXCEL ─────────────────────────────────────────────────────────────
-function handleDrop(e){e.preventDefault();handleDragLeave();var f=e.dataTransfer.files[0];if(f)parseFile(f);}
-function handleDragOver(e){e.preventDefault();document.getElementById('drop-zone').classList.add('dragover');}
-function handleDragLeave(){document.getElementById('drop-zone').classList.remove('dragover');}
-function handleFileInput(e){var f=e.target.files[0];if(f)parseFile(f);}
-
-// Normalise une clé de colonne : minuscules, sans accents, sans *, sans espaces superflus
-function normKey(k){
-  return String(k).toLowerCase()
-    .replace(/\*/g,'')
-    .replace(/[àâäa]/g,m=>m==='à'||m==='â'||m==='ä'?'a':m)
-    .replace(/à|â|ä/g,'a').replace(/é|è|ê|ë/g,'e').replace(/î|ï/g,'i')
-    .replace(/ô|ö/g,'o').replace(/ù|û|ü/g,'u').replace(/ç/g,'c')
-    .replace(/\s+/g,' ').trim();
-}
-
-// Convertit une valeur de date Excel (nombre sériel ou string) en JJ/MM/AAAA
-function excelDateToFr(val){
-  if(!val||val==='')return '';
-  // Déjà une string JJ/MM/AAAA
-  if(typeof val==='string'&&val.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/))return val;
-  // String ISO AAAA-MM-JJ
-  if(typeof val==='string'&&val.match(/^\d{4}-\d{2}-\d{2}/)){
-    var p=val.split('T')[0].split('-');return p[2]+'/'+p[1]+'/'+p[0];
-  }
-  // Nombre sériel Excel
-  if(!isNaN(+val)){
-    var n=+val;
-    var d=new Date((n-25569)*86400000);
-    if(!isNaN(d.getTime())){
-      var dd=String(d.getUTCDate()).padStart(2,'0');
-      var mm=String(d.getUTCMonth()+1).padStart(2,'0');
-      return dd+'/'+mm+'/'+d.getUTCFullYear();
-    }
-  }
-  return String(val).trim();
-}
-
-// ─── CORRESPONDANCE COLONNES ─────────────────────────────────────────────────
-// Couvre votre fichier iSolution ET les fichiers génériques
-var COL_MAP={
-  // === VOTRE FICHIER iSolution ===
-  'eleve nom':'nom','eleve nom':'nom',
-  'eleve prenom':'prenom','eleve prenom':'prenom',
-  'formateurs':'formateur',                          // colonne FORMATEURS
-  'mds organisme':'entreprise',                      // nom entreprise
-  'mds adresse 1':'adresse','mds adresse':'adresse', // adresse
-  'mds code postal':'codePostal',                    // code postal
-  'mds ville':'ville',                               // ville
-  'mds nom':'tuteurNom',                             // nom maître de stage
-  'mds prenom':'tuteurPrenom',                       // prénom maître de stage
-  'telephone 1':'telephone','tel 1':'telephone',
-  'portable 1':'portable','portable':'portable',
-  'contrat date debut':'contratDebut',
-  'contrat date fin':'contratFin',
-  'contrat type contrat':'typeContrat',
-
-  // === COLONNES GÉNÉRIQUES ===
-  'nom apprenti':'nom','nom':'nom','nom eleve':'nom',
-  'prenom apprenti':'prenom','prenom':'prenom','prenom eleve':'prenom',
-  'promotion':'promotion','classe':'promotion','formation':'promotion','section':'promotion',
-  'entreprise':'entreprise','societe':'entreprise','organisme':'entreprise',
-  'adresse':'adresse','adresse entreprise':'adresse','rue':'adresse',
-  'code postal':'codePostal','codepostal':'codePostal','cp':'codePostal',
-  'ville':'ville','commune':'ville',
-  'formateur':'formateur','formateur affecte':'formateur','formateur assigne':'formateur',
-  'date visite prevue':'datePrevue','date prevue':'datePrevue','date planifiee':'datePrevue',
-  'date visite effectuee':'dateEffectuee','date effectuee':'dateEffectuee',
-  'statut':'statut','etat':'statut',
-  'compte-rendu soumis':'crSoumis','cr soumis':'crSoumis','compte rendu soumis':'crSoumis',
-  'observations':'observations','remarques':'observations','commentaires':'observations'
-};
-
-// Mots-clés suffisants pour identifier la ligne d'en-tête
-var HDR_KEYWORDS=['nom','eleve nom','eleve prenom','entreprise','prenom','formateurs','mds organisme'];
-
-function parseFile(file){
-  var reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      var data=new Uint8Array(e.target.result);
-      var wb=XLSX.read(data,{type:'array',cellDates:false,raw:false});
-
-      // Cherche le bon onglet
-      var sheetName=wb.SheetNames.find(n=>normKey(n).includes('apprenti'))
-        ||wb.SheetNames.find(n=>normKey(n).includes('solution'))
-        ||wb.SheetNames.find(n=>normKey(n).includes('eleve'))
-        ||wb.SheetNames[0];
-      var ws=wb.Sheets[sheetName];
-
-      var rawRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
-      if(!rawRows.length){showImportAlert('Fichier vide ou format non reconnu','warn');return;}
-
-      // Trouver la ligne d'en-tête (cherche dans les 6 premières lignes)
-      var hdrIdx=0;
-      for(var i=0;i<Math.min(rawRows.length,6);i++){
-        var cells=rawRows[i].map(c=>normKey(String(c||'')));
-        if(cells.some(c=>HDR_KEYWORDS.includes(c))){hdrIdx=i;break;}
-      }
-
-      var headers=rawRows[hdrIdx].map(c=>normKey(String(c||'')));
-      var dataRows=rawRows.slice(hdrIdx+1);
-
-      // Index des colonnes spéciales pour traitement combiné
-      var iMdsNom=headers.indexOf('mds nom');
-      var iMdsPrenom=headers.indexOf('mds prenom');
-      var iTel1=headers.indexOf('telephone 1');
-      var iPort1=headers.indexOf('portable 1');
-
-      var mapped=dataRows.map(function(row){
-        var v={};
-        headers.forEach(function(h,i){
-          var field=COL_MAP[h];
-          if(field&&row[i]!==undefined&&String(row[i]).trim()!==''){
-            var val=String(row[i]).trim();
-            // Conversion dates
-            if(field==='datePrevue'||field==='dateEffectuee'||field==='contratDebut'||field==='contratFin')
-              val=excelDateToFr(val);
-            v[field]=val;
-          }
-        });
-        // Concaténer nom+prénom du maître de stage → tuteur
-        var tutNom=(iMdsNom>=0?String(row[iMdsNom]||'').trim():'');
-        var tutPre=(iMdsPrenom>=0?String(row[iMdsPrenom]||'').trim():'');
-        if(tutNom||tutPre) v.tuteur=[tutPre,tutNom].filter(Boolean).join(' ');
-        // Téléphone : prendre le premier disponible
-        if(!v.telephone){
-          var t=(iTel1>=0?String(row[iTel1]||'').trim():'');
-          var p=(iPort1>=0?String(row[iPort1]||'').trim():'');
-          v.telephone=t||p||'';
-        }
-        // Statut par défaut
-        if(!v.statut) v.statut=v.formateur?'Planifiée':'À affecter';
-        return v;
-      }).filter(v=>(v.nom||v.prenom)&&(v.entreprise||v.ville));
-
-      if(!mapped.length){
-        showImportAlert('⚠️ Aucune ligne reconnue. En-tête détectée ligne '+(hdrIdx+1)+'. Colonnes lues : '+headers.filter(Boolean).join(', '),'warn');
-        return;
-      }
-
-      var added=0,updated=0;
-      mapped.forEach(v=>{
-        var idx=visits.findIndex(x=>x.nom===v.nom&&x.prenom===v.prenom&&x.entreprise===v.entreprise);
-        if(idx<0){visits.push(v);added++;}
-        else{Object.assign(visits[idx],v);updated++;}
-      });
-      saveVisits();
-      showImportAlert('✅ Import réussi depuis "'+sheetName+'" — '+added+' ajouté(s), '+updated+' mis à jour.<br>Géocodage des adresses en cours…','success');
-      updateImportStatus();
-      renderDashboard();renderVisites();
-      geocodeCache={};
-    }catch(err){
-      showImportAlert('❌ Erreur lors de la lecture du fichier : '+err.message,'warn');
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function updateImportStatus(){
-  var html=`<div class="alert alert-success">✅ ${visits.length} visite(s) chargées en mémoire</div>`;
-  var byF={};
-  visits.forEach(v=>{var f=v.formateur||'Non affecté';byF[f]=(byF[f]||0)+1;});
-  html+=Object.keys(byF).sort().map(f=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0ee;font-size:12px"><span>${f}</span><strong>${byF[f]}</strong></div>`).join('');
-  document.getElementById('import-status').innerHTML=html;
-}
-
-function showImportAlert(msg,type='info'){
-  document.getElementById('import-alert').innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
-}
-
-// ─── DEMO DATA ────────────────────────────────────────────────────────────────
-function loadDemo(){
-  visits=[
-    {nom:'ALARCO',prenom:'Mateo',typeContrat:'STAGE',entreprise:'SAS RAPIERE BRICOMARCHE',adresse:'85 Allée Roch Pape',codePostal:'84300',ville:'CAVAILLON',formateur:'FABRICE',tuteur:'BRILLANT',telephone:'04 90 78 23 25',statut:'Planifiée'},
-    {nom:'ANTERIEUX',prenom:'Nathan',typeContrat:'CApp',entreprise:'SCIC SAS COPAL',adresse:'Route de Saussines',codePostal:'30250',ville:'SOMMIERES',formateur:'CHRISTINE',tuteur:'Daniel FLORES',telephone:'046771233',statut:'Planifiée'},
-    {nom:'ARNAUD',prenom:'Jimmy',typeContrat:'CApp',entreprise:'S.A.R.L TROPIC PLANTES',adresse:'1882 Route de Nîmes',codePostal:'30820',ville:'CAVEIRAC',formateur:'David',tuteur:'Eva POUW',telephone:'04 66 28 81 00',statut:'Effectuée',crSoumis:'Oui',dateEffectuee:'15/05/2026'},
-    {nom:'ATHALIE',prenom:'Marie',typeContrat:'CApp',entreprise:'SAS PROMODOG',adresse:'1867 CHEMIN DE COUDOULETS',codePostal:'84210',ville:'PERNES-LES-FONTAINES',formateur:'FABRICE',tuteur:'Stéphane LEVIEILS',telephone:'04 90 20 06 06',statut:'En retard'},
-    {nom:'AUSSEL',prenom:'Nathan',typeContrat:'CApp',entreprise:'MAISON OLIVIER',adresse:'1 RUE DE LA CARRETERIE',codePostal:'84000',ville:'AVIGNON',formateur:'FABRICE',tuteur:'Gérôme OLIVIER',telephone:'06 84 36 51 53',statut:'Planifiée'},
-    {nom:'BARRAL',prenom:'Manon',typeContrat:'STAGE',entreprise:'MAXI ZOO',adresse:'Centre Commercial Carré Sud',codePostal:'30000',ville:'NIMES',formateur:'FABIEN',tuteur:'Anthony GAUDIMONTE',telephone:'04 66 70 94 74',statut:'En retard'},
-    {nom:'DUPONT',prenom:'Romain',typeContrat:'CApp',entreprise:'Peugeot Avignon',adresse:'15 rue de la République',codePostal:'84000',ville:'AVIGNON',formateur:'FABRICE',tuteur:'Jean MARTIN',telephone:'04 90 12 34 56',statut:'Effectuée',crSoumis:'Oui',dateEffectuee:'20/05/2026'},
-    {nom:'LAMBERT',prenom:'Chloé',typeContrat:'STAGE',entreprise:'Leclerc Nîmes Nord',adresse:'ZAC Nord',codePostal:'30000',ville:'NIMES',formateur:'CHRISTINE',tuteur:'Sophie BLANC',telephone:'04 66 99 88 77',statut:'Effectuée',crSoumis:'Oui',dateEffectuee:'10/05/2026'},
-    {nom:'ROUSSEAU',prenom:'Manon',typeContrat:'CApp',entreprise:'BNP Paribas Avignon',adresse:'3 pl. de l\'Horloge',codePostal:'84000',ville:'AVIGNON',formateur:'',statut:'À affecter'},
-    {nom:'MARTIN',prenom:'Hugo',typeContrat:'STAGE',entreprise:'Decathlon Nîmes',adresse:'ZAC Anthena',codePostal:'30000',ville:'NIMES',formateur:'FABIEN',tuteur:'Marc DURAND',telephone:'04 66 11 22 33',statut:'Planifiée'},
-  ];
-  saveVisits();
-  showImportAlert('✅ Données de démonstration chargées (10 visites, format iSolution)','success');
-  updateImportStatus();renderDashboard();renderVisites();geocodeCache={};
-}
-function clearData(){if(confirm('Effacer toutes les données ?')){visits=[];saveVisits();renderDashboard();renderVisites();document.getElementById('import-status').innerHTML='<div class="empty"><p>Aucune donnée</p></div>';}}
-function saveVisits(){
-  localStorage.setItem('visits',JSON.stringify(visits));
-  gsSave(visits); // sync Google Sheets
-}
-
-// ─── MODAL AFFECT ─────────────────────────────────────────────────────────────
-function openModal(id){populateFilters();document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-var editIdx=-1;
-function editVisit(i){editIdx=i;var v=visits[i];populateFilters();document.getElementById('ma-apprenti').value=i;document.getElementById('ma-formateur').value=v.formateur||'';document.getElementById('ma-date').value=v.datePrevue?v.datePrevue.replace(/(\d{2})\/(\d{2})\/(\d{4})/,'$3-$2-$1'):'';document.getElementById('ma-statut').value=computeStatut(v);document.getElementById('ma-obs').value=v.observations||'';document.getElementById('modal-affect').classList.add('open');}
-function fillAffect(){var i=document.getElementById('ma-apprenti').value;if(i==='')return;var v=visits[+i];document.getElementById('ma-formateur').value=v.formateur||'';}
-function saveAffect(){
-  var i=+document.getElementById('ma-apprenti').value;
-  if(isNaN(i)||i<0||i>=visits.length)return;
-  var f=document.getElementById('ma-formateur').value;
-  var d=document.getElementById('ma-date').value;
-  visits[i].formateur=f;
-  if(d)visits[i].datePrevue=d.replace(/(\d{4})-(\d{2})-(\d{2})/,'$3/$2/$1');
-  visits[i].statut=document.getElementById('ma-statut').value;
-  visits[i].observations=document.getElementById('ma-obs').value;
-  saveVisits();closeModal('modal-affect');renderDashboard();renderVisites();
-}
-
-// ─── EXPORT CSV ───────────────────────────────────────────────────────────────
-function saveGasUrl(){
-  var url = document.getElementById('gas-url-input').value.trim();
-  if(!url){return;}
-  GAS_URL = url;
-  localStorage.setItem('gasUrl', url);
-  document.getElementById('gas-status').textContent = '✅ URL enregistrée — sync active';
-  document.getElementById('gas-status').style.color = '#3B6D11';
-  // Test immédiat
-  gsSave(visits);
-}
-
-function exportCsv(){
-  var hdr=['Nom','Prénom','Promotion','Entreprise','Ville','Formateur','Date prévue','Statut','CR'];
-  var rows=visits.map(v=>[v.nom,v.prenom,v.promotion,v.entreprise,v.ville,v.formateur||'',fmtDate(v.datePrevue),computeStatut(v),v.crSoumis||'Non']);
-  var csv=[hdr,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n');
-  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download='visites_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2800);
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
-// Charger depuis Google Sheets au démarrage
 (async function(){
   var fresh = await gsLoad();
   if(fresh !== null && fresh.length > 0){
     visits = fresh;
     localStorage.setItem('visits', JSON.stringify(visits));
-    updateImportStatus();
-  } else if(visits.length) {
-    updateImportStatus();
   }
-  renderDashboard(); renderVisites();
+  initSelect();
+  var fms=getFormateurs();
+  if(fms.length===1){document.getElementById('sel-view').value=fms[0];loginFormateur();}
   startPolling();
 })();
-document.getElementById('modal-affect').addEventListener('click',function(e){if(e.target===this)closeModal('modal-affect');});
 </script>
 </body>
 </html>
-
