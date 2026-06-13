@@ -151,7 +151,7 @@ select.filter{padding:6px 10px;border:1px solid var(--border2);border-radius:var
   </nav>
   <div class="topbar-right">
     <button class="btn" onclick="openModal('modal-affect')">+ Affecter</button>
-    <span class="badge-role">Responsable</span>
+    <span id="sync-status" style="font-size:11px;color:#9A9A94">○ Non configuré</span><span class="badge-role">Responsable</span>
   </div>
 </div>
 
@@ -245,6 +245,15 @@ select.filter{padding:6px 10px;border:1px solid var(--border2);border-radius:var
     <div class="panel">
       <div class="panel-head"><span class="panel-title">📥 Importer un fichier Excel</span></div>
       <div id="import-alert"></div>
+      <div id="gas-config-box" style="margin-bottom:14px;padding:12px;border-radius:8px;border:1px solid #b5d4f4;background:#E6F1FB">
+        <div style="font-size:12px;font-weight:600;color:#185FA5;margin-bottom:6px">🔗 Synchronisation Google Sheets</div>
+        <div style="font-size:11px;color:#444;margin-bottom:8px">Collez ici l'URL de votre Apps Script pour activer la sync en temps réel avec les formateurs.</div>
+        <div style="display:flex;gap:6px">
+          <input id="gas-url-input" type="text" placeholder="https://script.google.com/macros/s/..." style="flex:1;font-size:12px;padding:6px 10px">
+          <button class="btn btn-primary" style="white-space:nowrap" onclick="saveGasUrl()">Enregistrer</button>
+        </div>
+        <div id="gas-status" style="font-size:11px;margin-top:6px;color:#666"></div>
+      </div>
       <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
            ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -766,6 +775,66 @@ function placeGroupMarker(lat,lng,vlist){
   markers.push(m);
 }
 
+
+// ─── SYNC GOOGLE SHEETS ──────────────────────────────────────────────────────
+var SHEET_ID = "1o760oIUSgyz_F0hxYT4zGT--LrLDCh8KriLVFRZGARs";
+var GAS_URL  = localStorage.getItem('gasUrl') || '';  // Apps Script URL
+
+async function gsLoad() {
+  setSyncUI('syncing', 'Chargement...');
+  try {
+    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID
+      + '/gviz/tq?tqx=out:csv&sheet=data&range=A1&t=' + Date.now();
+    var r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var txt = (await r.text()).trim();
+    if (txt.startsWith('"')) txt = txt.slice(1,-1).replace(/""/g,'"');
+    if (!txt || txt === 'null' || txt === '') { setSyncUI('ok','Vide'); return []; }
+    var d = JSON.parse(txt);
+    setSyncUI('ok', 'Sync ' + fmtNow());
+    return Array.isArray(d) ? d : [];
+  } catch(e) { setSyncUI('error','Lecture: '+e.message); return null; }
+}
+
+async function gsSave(data) {
+  localStorage.setItem('visits', JSON.stringify(data)); // cache local toujours
+  if (!GAS_URL) { setSyncUI('error','URL Apps Script manquante'); return false; }
+  setSyncUI('syncing','Sauvegarde...');
+  try {
+    var r = await fetch(GAS_URL, {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'save',data:data})});
+    var j = await r.json();
+    if (j.status !== 'ok') throw new Error(j.message || 'Erreur');
+    setSyncUI('ok','Sauvegardé ' + fmtNow());
+    return true;
+  } catch(e) { setSyncUI('error','Sauvegarde: '+e.message); return false; }
+}
+
+function fmtNow(){ return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+function setSyncUI(s,msg){
+  var el=document.getElementById('sync-status'); if(!el)return;
+  var c={syncing:'#854F0B',ok:'#3B6D11',error:'#A32D2D'};
+  var i={syncing:'⟳',ok:'✓',error:'✗'};
+  el.style.color=c[s]||'#999'; el.textContent=(i[s]||'')+' '+msg;
+}
+
+var _pollTimer=null;
+function startPolling(){
+  if(_pollTimer)return;
+  _pollTimer=setInterval(async function(){
+    var fresh=await gsLoad();
+    if(fresh!==null){
+      var changed=JSON.stringify(fresh)!==JSON.stringify(visits);
+      if(changed){ visits=fresh; localStorage.setItem('visits',JSON.stringify(visits));
+        renderDashboard && renderDashboard();
+        renderVisites && renderVisites();
+        setSyncUI('ok','Mis à jour '+fmtNow());
+      }
+    }
+  },30000);
+}
+
 // ─── IMPORT EXCEL ─────────────────────────────────────────────────────────────
 function handleDrop(e){e.preventDefault();handleDragLeave();var f=e.dataTransfer.files[0];if(f)parseFile(f);}
 function handleDragOver(e){e.preventDefault();document.getElementById('drop-zone').classList.add('dragover');}
@@ -956,7 +1025,10 @@ function loadDemo(){
   updateImportStatus();renderDashboard();renderVisites();geocodeCache={};
 }
 function clearData(){if(confirm('Effacer toutes les données ?')){visits=[];saveVisits();renderDashboard();renderVisites();document.getElementById('import-status').innerHTML='<div class="empty"><p>Aucune donnée</p></div>';}}
-function saveVisits(){localStorage.setItem('visits',JSON.stringify(visits));}
+function saveVisits(){
+  localStorage.setItem('visits',JSON.stringify(visits));
+  gsSave(visits); // sync Google Sheets
+}
 
 // ─── MODAL AFFECT ─────────────────────────────────────────────────────────────
 function openModal(id){populateFilters();document.getElementById(id).classList.add('open');}
@@ -977,6 +1049,17 @@ function saveAffect(){
 }
 
 // ─── EXPORT CSV ───────────────────────────────────────────────────────────────
+function saveGasUrl(){
+  var url = document.getElementById('gas-url-input').value.trim();
+  if(!url){return;}
+  GAS_URL = url;
+  localStorage.setItem('gasUrl', url);
+  document.getElementById('gas-status').textContent = '✅ URL enregistrée — sync active';
+  document.getElementById('gas-status').style.color = '#3B6D11';
+  // Test immédiat
+  gsSave(visits);
+}
+
 function exportCsv(){
   var hdr=['Nom','Prénom','Promotion','Entreprise','Ville','Formateur','Date prévue','Statut','CR'];
   var rows=visits.map(v=>[v.nom,v.prenom,v.promotion,v.entreprise,v.ville,v.formateur||'',fmtDate(v.datePrevue),computeStatut(v),v.crSoumis||'Non']);
@@ -985,9 +1068,21 @@ function exportCsv(){
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
-if(visits.length){updateImportStatus();}
-renderDashboard();renderVisites();
+// Charger depuis Google Sheets au démarrage
+(async function(){
+  var fresh = await gsLoad();
+  if(fresh !== null && fresh.length > 0){
+    visits = fresh;
+    localStorage.setItem('visits', JSON.stringify(visits));
+    updateImportStatus();
+  } else if(visits.length) {
+    updateImportStatus();
+  }
+  renderDashboard(); renderVisites();
+  startPolling();
+})();
 document.getElementById('modal-affect').addEventListener('click',function(e){if(e.target===this)closeModal('modal-affect');});
 </script>
 </body>
 </html>
+
