@@ -119,6 +119,22 @@ select.filter{padding:6px 10px;border:1px solid var(--border2);border-radius:var
 .alert-success{background:var(--green-light);color:var(--green);border:1px solid #c0dd97}
 .alert-warn{background:var(--amber-light);color:var(--amber);border:1px solid #fac775}
 
+/* CELLULES ÉDITABLES */
+.editable-cell{cursor:pointer;position:relative}
+.editable-cell:hover{background:#f0f7ff !important}
+.editable-cell:hover::after{content:'✏';font-size:9px;color:#185FA5;position:absolute;top:2px;right:3px;opacity:.6}
+.cell-input{width:100%;border:none;background:transparent;font-size:12px;font-family:inherit;color:var(--text);padding:0;outline:none}
+.cell-input:focus{background:#fff;border-bottom:2px solid var(--blue)}
+.cell-select{width:100%;border:none;background:transparent;font-size:12px;font-family:inherit;color:var(--text);padding:0;outline:none;cursor:pointer}
+.cell-select:focus{background:#fff;border-bottom:2px solid var(--blue)}
+tr.editing td{background:#f8faff}
+.btn-add-row{margin-top:8px;width:100%;padding:7px;border:1.5px dashed var(--border2);border-radius:var(--radius);background:transparent;color:var(--text3);cursor:pointer;font-size:12px;transition:.15s}
+.btn-add-row:hover{background:var(--gray-100);color:var(--text);border-color:var(--blue)}
+.btn-del{padding:3px 6px;font-size:11px;border-radius:5px;border:1px solid #f0b0b0;background:#fff5f5;color:#A32D2D;cursor:pointer}
+.btn-del:hover{background:#FCEBEB}
+.save-indicator{font-size:11px;color:#3B6D11;margin-left:8px;opacity:0;transition:opacity .3s}
+.save-indicator.show{opacity:1}
+
 /* RESPONSIVE */
 @media(max-width:700px){
   .stats-grid,.panel-grid,.import-grid{grid-template-columns:1fr}
@@ -179,8 +195,12 @@ select.filter{padding:6px 10px;border:1px solid var(--border2);border-radius:var
   <div class="panel">
     <div class="panel-head">
       <span class="panel-title">Toutes les visites (<span id="visit-count">0</span>)</span>
+      <span class="save-indicator" id="save-indicator">✓ Sauvegardé</span>
       <button class="btn" onclick="exportCsv()">⬇ Export CSV</button>
-      <button class="btn btn-primary" onclick="openModal('modal-affect')">+ Affecter</button>
+      <button class="btn btn-primary" onclick="addNewVisit()">+ Nouvelle ligne</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">
+      💡 Cliquez sur n'importe quelle cellule pour la modifier directement · Les modifications sont sauvegardées automatiquement
     </div>
     <div class="filters">
       <input class="search-input" id="search" placeholder="🔍 Rechercher…" oninput="renderVisites()">
@@ -191,10 +211,10 @@ select.filter{padding:6px 10px;border:1px solid var(--border2);border-radius:var
       </select>
       <select class="filter" id="f-promo" onchange="renderVisites()"><option value="">Toutes promotions</option></select>
     </div>
-    <div class="tbl-wrap"><table>
+    <div class="tbl-wrap"><table id="visites-table">
       <thead><tr>
-        <th>Élève</th><th>Type</th><th>Entreprise</th><th>Ville</th>
-        <th>Tuteur</th><th>Formateur</th><th>Date prévue</th><th>Statut</th><th>CR</th><th></th>
+        <th>Nom</th><th>Prénom</th><th>Type</th><th>Entreprise</th><th>Ville</th>
+        <th>Tuteur</th><th>Téléphone</th><th>Formateur</th><th>Date prévue</th><th>Statut</th><th>CR</th><th></th>
       </tr></thead>
       <tbody id="visites-tbody"></tbody>
     </table></div>
@@ -351,7 +371,12 @@ function nav(page){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   event.currentTarget.classList.add('active');
-  if(page==='carte'){setTimeout(initMap,100);}
+  if(page==='carte'){
+    setTimeout(function(){
+      if(!map){ initMap(); }
+      else { renderMapMarkers(); } // données peut-être chargées depuis dernier affichage
+    },100);
+  }
   if(page==='dashboard')renderDashboard();
   if(page==='visites')renderVisites();
 }
@@ -466,33 +491,127 @@ function stat(label,val,color){
 }
 
 // ─── VISITES ──────────────────────────────────────────────────────────────────
+var saveTimer=null;
+function flashSaved(){
+  var el=document.getElementById('save-indicator');
+  if(!el)return;
+  el.classList.add('show');
+  setTimeout(function(){el.classList.remove('show');},2000);
+}
+function escHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+// Tous les inputs/selects éditables utilisent data-gi et data-field
+// pour éviter les problèmes d'échappement de strings
+function makeInput(gi, field, val, placeholder, type){
+  type=type||'text';
+  return '<input class="cell-input" type="'+type+'" data-gi="'+gi+'" data-field="'+field
+    +'" value="'+escHtml(val||'')+'" placeholder="'+escHtml(placeholder||'')+'" onchange="handleCellChange(this)" onblur="handleCellChange(this)">';
+}
+function makeSelect(gi, field, val, options, includeEmpty){
+  var opts='';
+  if(includeEmpty!==false) opts='<option value=""></option>';
+  options.forEach(function(o){
+    opts+='<option value="'+escHtml(o)+'"'+(val===o?' selected':'')+'>'+escHtml(o)+'</option>';
+  });
+  return '<select class="cell-select" data-gi="'+gi+'" data-field="'+field+'" onchange="handleCellChange(this)">'+opts+'</select>';
+}
+function makeDateInput(gi, field, val){
+  // Convertit JJ/MM/AAAA → AAAA-MM-JJ pour input[type=date]
+  var iso='';
+  if(val){
+    var m=String(val).match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    if(m) iso=m[3]+'-'+m[2]+'-'+m[1];
+  }
+  return '<input class="cell-input" type="date" data-gi="'+gi+'" data-field="'+field
+    +'" value="'+iso+'" onchange="handleCellChange(this)">';
+}
+function handleCellChange(el){
+  var gi=+el.getAttribute('data-gi');
+  var field=el.getAttribute('data-field');
+  var val=el.value;
+  // Reconvertir date ISO → JJ/MM/AAAA
+  if(field==='datePrevue'&&val){
+    var m=val.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if(m) val=m[3]+'/'+m[2]+'/'+m[1];
+  }
+  setCellValue(gi, field, val);
+}
+function setCellValue(gi, field, value){
+  if(gi<0||gi>=visits.length)return;
+  visits[gi][field]=value;
+  if(field==='formateur'&&!visits[gi].statut) visits[gi].statut=value?'Planifiée':'À affecter';
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(function(){
+    saveVisits(); flashSaved(); renderDashboard(); populateFilters();
+  },800);
+}
+function addNewVisit(){
+  visits.unshift({nom:'',prenom:'',typeContrat:'',entreprise:'',ville:'',adresse:'',
+    codePostal:'',tuteur:'',telephone:'',formateur:'',datePrevue:'',statut:'À affecter',crSoumis:'Non'});
+  saveVisits(); renderVisites();
+  setTimeout(function(){var el=document.querySelector('#visites-tbody .cell-input');if(el)el.focus();},100);
+}
+function deleteVisit(gi){
+  var v=visits[gi];
+  if(!confirm('Supprimer la visite de '+((v.prenom||'')+' '+(v.nom||'')).trim()+'  ?'))return;
+  visits.splice(gi,1);
+  saveVisits(); flashSaved(); renderDashboard(); renderVisites();
+}
 function renderVisites(){
   var q=(document.getElementById('search').value||'').toLowerCase();
   var ff=document.getElementById('f-formateur').value;
   var fs=document.getElementById('f-statut').value;
   var fp=document.getElementById('f-promo').value;
-  var filtered=visits.filter(v=>{
+  var filtered=visits.filter(function(v){
     var s=computeStatut(v);
     if(ff&&v.formateur!==ff)return false;
     if(fs&&s!==fs)return false;
-    if(fp&&v.promotion!==fp)return false;
+    if(fp&&(v.promotion||v.typeContrat)!==fp)return false;
     if(q&&!(v.nom+' '+v.prenom+' '+v.entreprise+' '+v.ville).toLowerCase().includes(q))return false;
     return true;
   });
   document.getElementById('visit-count').textContent=filtered.length;
-  var html=filtered.map((v,i)=>`<tr>
-    <td><strong>${v.nom} ${v.prenom}</strong></td>
-    <td style="color:var(--text3);font-size:11px">${v.typeContrat||v.promotion||'—'}</td>
-    <td>${v.entreprise||'—'}</td>
-    <td style="font-size:11px">${v.ville||'—'}</td>
-    <td style="font-size:11px;color:var(--text2)">${v.tuteur||'—'}</td>
-    <td>${v.formateur||'<span style="color:var(--text3)">Non affecté</span>'}</td>
-    <td>${fmtDate(v.datePrevue)}</td>
-    <td>${statusBadge(computeStatut(v))}</td>
-    <td>${v.crSoumis==='Oui'?'<span style="color:#3B6D11;font-size:11px">✓</span>':'<span style="color:var(--text3);font-size:11px">—</span>'}</td>
-    <td><button class="btn" style="padding:4px 8px;font-size:11px" onclick="editVisit(${visits.indexOf(v)})">✏</button></td>
-  </tr>`).join('');
-  document.getElementById('visites-tbody').innerHTML=html||'<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:24px">Aucune visite trouvée</td></tr>';
+
+  var formateurs=[...new Set(visits.map(function(v){return v.formateur;}).filter(Boolean))].sort();
+  var statutOpts=['Planifiée','Effectuée','En retard','À affecter','Annulée'];
+  var crOpts=['Non','Oui'];
+
+  var rows=filtered.map(function(v){
+    var gi=visits.indexOf(v);
+    var s=computeStatut(v);
+    // Formateur select
+    var fmtOpts='<option value="">Non affecté</option>';
+    formateurs.forEach(function(f){
+      fmtOpts+='<option value="'+escHtml(f)+'"'+(v.formateur===f?' selected':'')+'>'+escHtml(f)+'</option>';
+    });
+    var fmtSelect='<select class="cell-select" data-gi="'+gi+'" data-field="formateur" onchange="handleCellChange(this)">'+fmtOpts+'</select>';
+    // Statut select
+    var stOpts='<option value=""></option>';
+    statutOpts.forEach(function(o){ stOpts+='<option'+(s===o?' selected':'')+'>'+escHtml(o)+'</option>'; });
+    var stSelect='<select class="cell-select" data-gi="'+gi+'" data-field="statut" onchange="handleCellChange(this)">'+stOpts+'</select>';
+    // CR select
+    var crOptHtml='';
+    crOpts.forEach(function(o){ crOptHtml+='<option'+(v.crSoumis===o?' selected':'')+'>'+escHtml(o)+'</option>'; });
+    var crSelect='<select class="cell-select" data-gi="'+gi+'" data-field="crSoumis" onchange="handleCellChange(this)">'+crOptHtml+'</select>';
+
+    return '<tr>'
+      +'<td class="editable-cell">'+makeInput(gi,'nom',v.nom,'Nom')+'</td>'
+      +'<td class="editable-cell">'+makeInput(gi,'prenom',v.prenom,'Prénom')+'</td>'
+      +'<td class="editable-cell" style="min-width:65px">'+makeInput(gi,'typeContrat',v.typeContrat,'Type')+'</td>'
+      +'<td class="editable-cell" style="min-width:130px">'+makeInput(gi,'entreprise',v.entreprise,'Entreprise')+'</td>'
+      +'<td class="editable-cell">'+makeInput(gi,'ville',v.ville,'Ville')+'</td>'
+      +'<td class="editable-cell">'+makeInput(gi,'tuteur',v.tuteur,'Tuteur')+'</td>'
+      +'<td class="editable-cell" style="min-width:100px">'+makeInput(gi,'telephone',v.telephone,'Téléphone')+'</td>'
+      +'<td class="editable-cell" style="min-width:110px">'+fmtSelect+'</td>'
+      +'<td class="editable-cell" style="min-width:120px">'+makeDateInput(gi,'datePrevue',v.datePrevue)+'</td>'
+      +'<td class="editable-cell">'+stSelect+'</td>'
+      +'<td class="editable-cell">'+crSelect+'</td>'
+      +'<td><button class="btn-del" onclick="deleteVisit('+gi+')" title="Supprimer">✕</button></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('visites-tbody').innerHTML=rows
+    ||'<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:24px">Aucune visite trouvée</td></tr>';
   populateFilters();
 }
 function populateFilters(){
@@ -844,6 +963,7 @@ function startPolling() {
         localStorage.setItem('visits', JSON.stringify(visits));
         renderDashboard && renderDashboard();
         renderVisites && renderVisites();
+        if(map) renderMapMarkers(); // rafraîchir la carte si ouverte
         setSyncUI('ok', 'Mis à jour ' + fmtNow());
       }
     } else if (fresh !== null && fresh.length === 0 && visits.length > 0) {
@@ -1099,6 +1219,8 @@ function exportCsv(){
     updateImportStatus();
   }
   renderDashboard(); renderVisites();
+  // Si la carte est déjà ouverte (rechargement de page), la rafraîchir
+  if(map) renderMapMarkers();
   startPolling();
 })();
 document.getElementById('modal-affect').addEventListener('click',function(e){if(e.target===this)closeModal('modal-affect');});
