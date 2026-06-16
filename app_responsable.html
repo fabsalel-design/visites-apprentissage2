@@ -166,6 +166,7 @@ tr.editing td{background:#f8faff}
     <button class="nav-btn" onclick="nav('import')"><span>📥 </span>Import Excel</button>
   </nav>
   <div class="topbar-right">
+    <button class="btn" onclick="syncFromSheets()" title="Recharger depuis l'onglet iSolution de Google Sheets">🔄 Sync Sheets</button>
     <button class="btn" onclick="openModal('modal-affect')">+ Affecter</button>
     <span id="sync-status" style="font-size:11px;color:#9A9A94">○ Non configuré</span><span class="badge-role">Responsable</span>
   </div>
@@ -1200,6 +1201,28 @@ function saveGasUrl(){
   gsSave(visits);
 }
 
+// Synchroniser depuis l'onglet iSolution de Google Sheets
+async function syncFromSheets(){
+  var el=document.getElementById('sync-status');
+  if(el){el.style.color='#854F0B';el.textContent='⟳ Sync iSolution...';}
+  try{
+    var r=await fetch(GAS_URL+'?action=sync&t='+Date.now());
+    var j=await r.json();
+    if(j.status!=='ok') throw new Error(j.message||'Erreur');
+    // Recharger les données
+    var fresh=await gsLoad();
+    if(fresh&&fresh.length>0){
+      visits=fresh;
+      localStorage.setItem('visits',JSON.stringify(visits));
+      renderDashboard(); renderVisites();
+      if(map) renderMapMarkers();
+      setSyncUI('ok','Sync OK — '+fresh.length+' visites chargées');
+    }
+  }catch(e){
+    setSyncUI('error','Erreur sync: '+e.message);
+  }
+}
+
 function exportCsv(){
   var hdr=['Nom','Prénom','Promotion','Entreprise','Ville','Formateur','Date prévue','Statut','CR'];
   var rows=visits.map(v=>[v.nom,v.prenom,v.promotion,v.entreprise,v.ville,v.formateur||'',fmtDate(v.datePrevue),computeStatut(v),v.crSoumis||'Non']);
@@ -1210,11 +1233,27 @@ function exportCsv(){
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 // Charger depuis Google Sheets au démarrage
 (async function(){
+  // Essayer de charger depuis Sheets
   var fresh = await gsLoad();
   if(fresh !== null && fresh.length > 0){
     visits = fresh;
     localStorage.setItem('visits', JSON.stringify(visits));
     updateImportStatus();
+  } else if(fresh !== null && fresh.length === 0){
+    // Sheets vide → synchroniser depuis onglet iSolution
+    setSyncUI('syncing','Chargement depuis iSolution...');
+    try{
+      var r=await fetch(GAS_URL+'?action=sync&t='+Date.now());
+      var j=await r.json();
+      if(j.status==='ok'){
+        var fresh2=await gsLoad();
+        if(fresh2&&fresh2.length>0){
+          visits=fresh2;
+          localStorage.setItem('visits',JSON.stringify(visits));
+          updateImportStatus();
+        }
+      }
+    }catch(e){ setSyncUI('error','Erreur: '+e.message); }
   } else if(visits.length) {
     updateImportStatus();
   }
