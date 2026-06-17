@@ -208,6 +208,10 @@ textarea{resize:vertical;min-height:72px}
 <div class="toast" id="toast"></div>
 
 <script>
+function encodeURIComponent_safe(s){
+  try{ return encodeURIComponent(String(s||'').trim()); }catch(e){ return ''; }
+}
+
 // ─── DONNÉES ──────────────────────────────────────────────────────────────────
 var visits  = JSON.parse(localStorage.getItem('visits')||'[]');
 var drafts  = JSON.parse(localStorage.getItem('drafts')||'{}');
@@ -282,6 +286,7 @@ function startPolling() {
         localStorage.setItem('visits', JSON.stringify(visits));
         renderDashboard && renderDashboard();
         renderVisites && renderVisites();
+        if(fmap) renderFMap(); // rafraîchir la carte si ouverte
         setSyncUI('ok', 'Mis à jour ' + fmtNow());
       }
     } else if (fresh !== null && fresh.length === 0 && visits.length > 0) {
@@ -350,7 +355,12 @@ function switchTab(id){
   document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   document.getElementById('page-'+id).classList.add('active');
-  if(id==='carte') setTimeout(initFMap,80);
+  if(id==='carte'){
+    setTimeout(function(){
+      if(!fmapInit){ initFMap(); }
+      else { renderFMap(); } // forcer re-render avec données fraîches
+    },80);
+  }
 }
 
 // ─── STATS ────────────────────────────────────────────────────────────────────
@@ -397,7 +407,7 @@ function buildCard(v,gi,s,d){
     +'<div class="status-dot" style="background:'+statusColor(s)+'"></div>'
     +'<div class="vc-info">'
     +'<div class="vc-name">'+v.prenom+' '+v.nom+'</div>'
-    +'<div class="vc-meta">'+v.entreprise+' · '+(v.ville||'')+(v.datePrevue?' · Prévue le '+fmtDate(v.datePrevue):'')+'</div>'
+    +'<div class="vc-meta" style="font-weight:500;color:var(--text2)">'+v.entreprise+'</div>'+'<div class="vc-meta" style="margin-top:1px">'+(v.adresse?v.adresse+', ':'')+(v.codePostal?v.codePostal+' ':'')+(v.ville||'')+'</div>'+'<div class="vc-meta" style="margin-top:2px;display:flex;gap:10px">'+(v.datePrevue?'📅 Prévue le '+fmtDate(v.datePrevue):'')+(v.tuteur?' · 👤 '+v.tuteur:'')+(v.telephone?' · 📞 <a href="tel:'+v.telephone+'" style="color:#185FA5">'+v.telephone+'</a>':'')+'</div>'
     +'</div>'
     +statusBadge(s)
     +(cr?'<span class="badge b-done" style="margin-left:4px">CR ✓</span>':'')
@@ -405,6 +415,15 @@ function buildCard(v,gi,s,d){
     +'</div>'
     +'<div class="visit-body" id="body-'+gi+'">'
     +(cr?'<div class="alert alert-success">✅ Compte-rendu soumis. Vous pouvez le modifier si besoin.</div>':'')
+    +'<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:#fff;border-radius:8px;border:1px solid var(--border);margin-bottom:14px">'
+    +'<div style="font-size:20px;line-height:1">📍</div>'
+    +'<div style="flex:1">'
+    +'<div style="font-weight:600;font-size:13px;margin-bottom:2px">'+v.entreprise+'</div>'
+    +'<div style="font-size:12px;color:var(--text2);margin-bottom:4px">'+(v.adresse||'')+(v.adresse&&v.codePostal?', ':'')+(v.codePostal||'')+(v.codePostal&&v.ville?' ':'')+(v.ville||'')+'</div>'
+    +((v.adresse||v.ville)?'<a href="https://www.google.com/maps/search/'+encodeURIComponent_safe(v.adresse+' '+v.codePostal+' '+v.ville)+'" target="_blank" style="font-size:11px;color:#185FA5;text-decoration:none">🗺 Ouvrir dans Google Maps</a>':'')
+    +(v.tuteur?'<div style="font-size:11px;color:var(--text3);margin-top:4px">👤 Tuteur : '+v.tuteur+'</div>':'')
+    +(v.telephone?'<div style="font-size:11px;margin-top:2px">📞 <a href="tel:'+v.telephone+'" style="color:#185FA5">'+v.telephone+'</a></div>':'')
+    +'</div></div>'
     +'<div class="form-grid2">'
     +'<div class="form-group"><label class="form-label">Date de visite effectuée *</label><input type="date" id="date-'+gi+'" value="'+(d.dateEffectuee||toInputDate(v.dateEffectuee)||'')+'"></div>'
     +'<div class="form-group"><label class="form-label">Tuteur rencontré</label><input type="text" id="tuteur-'+gi+'" placeholder="Nom et prénom" value="'+(d.tuteur||v.tuteur||'')+'"></div>'
@@ -669,6 +688,8 @@ function toast(msg){
   initSelect();
   var fms=getFormateurs();
   if(fms.length===1){document.getElementById('sel-view').value=fms[0];loginFormateur();}
+  // Si carte déjà ouverte → rafraîchir
+  if(fmap) renderFMap();
   startPolling();
 })();
 </script>
